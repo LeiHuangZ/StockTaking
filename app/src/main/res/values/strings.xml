@@ -1,0 +1,57 @@
+<resources>
+    <string name="app_name">库存管理</string>
+
+    <!-- login 界面-->
+    <string name="username">用户名</string>
+    <string name="password">密码</string>
+    <string name="login">登陆</string>
+    <string name="login_ing">正在登陆....</string>
+    <string name="name_password_null">用户名或密码不能为空!</string>
+    <string name="password_length_error">密码长度不合法!</string>
+    <string name="welcome">欢迎！</string>
+    <string name="login_net_error">请检查网络后重试</string>
+    <string name="login_error">账户或密码错误!</string>
+    <string name="login_status_error">账户状态异常，请联系管理员!</string>
+    <string name="login_error_unknown">登陆失败，未知错误!</string>
+    <!-- 主界面 -->
+    <string name="home_btn_storage">购买入库</string>
+    <string name="home_btn_delivery">箱子出库</string>
+    <string name="home_btn_doorkeeper">门卫检查</string>
+    <string name="home_btn_harvest">物料收货</string>
+    <string name="home_btn_inventory">物料盘点</string>
+    <string name="home_btn_clean">箱子清洁</string>
+    <string name="home_btn_clean_check">清洁检查</string>
+    <string name="home_btn_sap">SAP通讯</string>
+    <string name="init_rfid_fail">初始化RFID失败</string>
+    <string name="init_rfid_success">初始化RFID成功</string>
+    <!-- 购买入库界面 -->
+    <string name="getting_order_id">正在获取预定订单号....</string>
+    <string name="getting_order_detail_id">正在获取订单详情....</string>
+    <string name="comparing_order_info">正在比对订单信息....</string>
+    <string name="order_buy_id_title">预定订单号：</string>
+    <string name="storage_btn_scan">点击扫描</string>
+    <string name="storage_btn_scan_stop">停止扫描</string>
+    <string name="storage_btn_record">记录信息</string>
+    <string name="storage_btn_ensure">确认订单</string>
+    <string name="storage_tv_sum">箱子总数：</string>
+    <string name="storage_tv_count">扫描标签数：</string>
+    <string name="zero">0</string>
+    <string name="get_details_erro">未获取到该订单号的箱子信息</string>
+    <string name="rfid">RFID</string>
+    <string name="buy_company">购买公司</string>
+    <string name="box_type">箱子型号</string>
+    <string name="box_price">购买单价</string>
+    <string name="box_num">购买数量</string>
+    <string name="pre_time">预定时间</string>
+    <string name="buy_company_">购买公司：</string>
+    <string name="need_time_">需求时间：</string>
+    <string name="buy_time_">购买时间：</string>
+    <string name="for_project_">所为项目：</string>
+    <string name="supplier_name_">供应商：</string>
+    <string name="attrition_rate_">损耗率(%)：</string>
+    <string name="use_life_">使用寿命(月)：</string>
+    <string name="confirm">确认</string>
+    <string name="cancel">取消</string>
+    <!-- 物料出库 -->
+
+</resources>

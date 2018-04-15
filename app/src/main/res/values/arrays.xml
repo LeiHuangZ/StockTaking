@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="order_number">
+        <item>请选择订单号</item>
+    </string-array>
+</resources>

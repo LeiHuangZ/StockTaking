@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- login界面 -->
+    <dimen name="img_border">75dp</dimen>
+    <dimen name="edt_height">60dp</dimen>
+    <dimen name="login_btn_height">80dp</dimen>
+    <dimen name="text_size">28sp</dimen>
+    <dimen name="margin_side">40dp</dimen>
+
+    <!-- 主界面 -->
+    <dimen name="home_btn_height">80dp</dimen>
+    <dimen name="home_btn_margin_fluctuate">10dp</dimen>
+
+    <!-- 购买入库界面 -->
+    <dimen name="storage_text_size">18sp</dimen>
+    <dimen name="storage_btn_text_size">20sp</dimen>
+    <dimen name="storage_spinner_width">200dp</dimen>
+    <dimen name="storage_spinner_height">34dp</dimen>
+    <dimen name="storage_result_tv_height">150dp</dimen>
+    <dimen name="storage_result_tv_width">150dp</dimen>
+    <dimen name="storage_btn_height">60dp</dimen>
+    <dimen name="storage_btn_margin_fluctuate">10dp</dimen>
+    <dimen name="storage_layout_padding">5dp</dimen>
+    <dimen name="storage_view_margin">10dp</dimen>
+    
+    <!-- 物料出库 -->
+    <dimen name="outbound_text_size">20sp</dimen>
+    <dimen name="outbound_btn_height">60dp</dimen>
+    <dimen name="outbound_spinner_height">30dp</dimen>
+</resources>

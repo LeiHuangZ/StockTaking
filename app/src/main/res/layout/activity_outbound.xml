@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".activity.StorageActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingEnd="10dp"
+        android:paddingStart="10dp"
+        android:paddingTop="10dp">
+
+        <Button
+            android:id="@+id/out_btn_scan"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/storage_btn_height"
+            android:background="@drawable/btn_bg"
+            android:orientation="horizontal"
+            android:text="@string/storage_btn_scan"
+            android:textColor="@color/colorWhite"
+            android:textSize="@dimen/storage_text_size" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="30dp"
+            android:layout_marginStart="30dp"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="出库地址：    "
+                    android:textSize="18sp"
+                    android:textColor="@color/colorText" />
+
+                <Spinner
+                    android:id="@+id/out_spinner_send_addr"
+                    android:layout_width="120dp"
+                    android:layout_height="@dimen/outbound_spinner_height"
+                    android:textSize="18sp"
+                    android:background="@drawable/spinner_border"
+                    android:gravity="center" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="收货地址：    "
+                    android:textSize="18sp"
+                    android:textColor="@color/colorText" />
+
+                <Spinner
+                    android:id="@+id/out_spinner_receive_addr"
+                    android:layout_width="120dp"
+                    android:layout_height="@dimen/outbound_spinner_height"
+                    android:textSize="18sp"
+                    android:background="@drawable/spinner_border"
+                    android:gravity="center" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="运输公司：    "
+                    android:textSize="18sp"
+                    android:textColor="@color/colorText" />
+
+                <Spinner
+                    android:id="@+id/out_spinner_company"
+                    android:layout_width="120dp"
+                    android:layout_height="@dimen/outbound_spinner_height"
+                    android:textSize="18sp"
+                    android:background="@drawable/spinner_border"
+                    android:gravity="center" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="运输车牌号："
+                    android:textSize="18sp"
+                    android:textColor="@color/colorText" />
+
+                <EditText
+                    android:id="@+id/out_edt_plate"
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/spinner_border"
+                    android:focusable="true"
+                    android:textSize="18sp"
+                    android:gravity="center" />
+
+            </LinearLayout>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/out_btn_out"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/storage_btn_height"
+            android:background="@drawable/btn_bg"
+            android:orientation="horizontal"
+            android:text="点击出库"
+            android:textColor="@color/colorWhite"
+            android:textSize="@dimen/storage_text_size" />
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingEnd="0dp"
+        android:paddingStart="@dimen/storage_layout_padding"
+        android:paddingTop="10dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/storage_tv_sum"
+            android:textColor="@color/colorText"
+            android:textSize="@dimen/storage_text_size" />
+
+        <TextView
+            android:id="@+id/out_tv_sum"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/storage_view_margin"
+            android:text="@string/zero"
+            android:textColor="@color/colorText"
+            android:textSize="@dimen/storage_text_size" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/storage_tv_count"
+            android:textColor="@color/colorText"
+            android:textSize="@dimen/storage_text_size" />
+
+        <TextView
+            android:id="@+id/out_tv_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/zero"
+            android:textColor="@color/colorText"
+            android:textSize="@dimen/storage_text_size" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="100dp"
+            android:text="是否空箱："
+            android:textColor="@color/colorText"
+            android:textSize="@dimen/outbound_text_size" />
+
+        <CheckBox
+            android:id="@+id/out_db_null"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="wrap_content"
+        android:layout_height="100dp">
+        <TextView
+            android:id="@+id/out_tv_result"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/storage_layout_padding"
+            android:textColor="@color/colorText"
+            android:textSize="16sp" />
+
+    </ScrollView>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/out_rcv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginTop="@dimen/storage_view_margin" />
+</LinearLayout>

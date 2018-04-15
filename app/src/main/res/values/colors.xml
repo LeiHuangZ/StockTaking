@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="colorDefault">#FAFAFA</color>
+    <color name="colorBlue">#5B9BD5</color>
+    <color name="colorGray">#5B9BD5</color>
+    <color name="colorBtnUnselected">#5B9BD5</color>
+    <color name="colorWhite">#FFFFFF</color>
+    <color name="colorBtnSelected">#5FE6E6E6</color>
+    <color name="colorImageBg">#5B9BD5</color>
+    <color name="colorText">#609ED6</color>
+</resources>

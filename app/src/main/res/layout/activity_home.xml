@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginTop="@dimen/home_btn_margin_fluctuate"
+    android:layout_marginBottom="@dimen/home_btn_margin_fluctuate"
+    android:orientation="vertical"
+    android:gravity="center"
+    tools:context=".activity.HomeActivity">
+
+    <Button
+        android:id="@+id/home_btn_storage"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/home_btn_height"
+        android:layout_marginEnd="@dimen/margin_side"
+        android:layout_marginStart="@dimen/margin_side"
+        android:background="@drawable/btn_bg"
+        android:orientation="horizontal"
+        android:text="@string/home_btn_storage"
+        android:textColor="@color/colorWhite"
+        android:textSize="@dimen/text_size" />
+
+    <Button
+        android:id="@+id/home_btn_delivery"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/home_btn_height"
+        android:layout_marginEnd="@dimen/margin_side"
+        android:layout_marginStart="@dimen/margin_side"
+        android:layout_marginTop="@dimen/home_btn_margin_fluctuate"
+        android:background="@drawable/btn_bg"
+        android:orientation="horizontal"
+        android:text="@string/home_btn_delivery"
+        android:textColor="@color/colorWhite"
+        android:textSize="@dimen/text_size" />
+
+    <Button
+        android:id="@+id/home_btn_doorkeeper"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/home_btn_height"
+        android:layout_marginEnd="@dimen/margin_side"
+        android:layout_marginStart="@dimen/margin_side"
+        android:layout_marginTop="@dimen/home_btn_margin_fluctuate"
+        android:background="@drawable/btn_bg"
+        android:orientation="horizontal"
+        android:text="@string/home_btn_doorkeeper"
+        android:textColor="@color/colorWhite"
+        android:textSize="@dimen/text_size" />
+
+    <Button
+        android:id="@+id/home_btn_harvest"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/home_btn_height"
+        android:layout_marginEnd="@dimen/margin_side"
+        android:layout_marginStart="@dimen/margin_side"
+        android:layout_marginTop="@dimen/home_btn_margin_fluctuate"
+        android:background="@drawable/btn_bg"
+        android:orientation="horizontal"
+        android:text="@string/home_btn_harvest"
+        android:textColor="@color/colorWhite"
+        android:textSize="@dimen/text_size" />
+
+    <Button
+        android:id="@+id/home_btn_inventory"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/home_btn_height"
+        android:layout_marginEnd="@dimen/margin_side"
+        android:layout_marginStart="@dimen/margin_side"
+        android:layout_marginTop="@dimen/home_btn_margin_fluctuate"
+        android:background="@drawable/btn_bg"
+        android:orientation="horizontal"
+        android:text="@string/home_btn_inventory"
+        android:textColor="@color/colorWhite"
+        android:textSize="@dimen/text_size" />
+
+    <Button
+        android:id="@+id/home_btn_clean"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/home_btn_height"
+        android:layout_marginEnd="@dimen/margin_side"
+        android:layout_marginStart="@dimen/margin_side"
+        android:layout_marginTop="@dimen/home_btn_margin_fluctuate"
+        android:background="@drawable/btn_bg"
+        android:orientation="horizontal"
+        android:text="@string/home_btn_clean"
+        android:textColor="@color/colorWhite"
+        android:textSize="@dimen/text_size" />
+
+    <Button
+        android:id="@+id/home_btn_clean_check"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/home_btn_height"
+        android:layout_marginEnd="@dimen/margin_side"
+        android:layout_marginStart="@dimen/margin_side"
+        android:layout_marginTop="@dimen/home_btn_margin_fluctuate"
+        android:background="@drawable/btn_bg"
+        android:orientation="horizontal"
+        android:text="@string/home_btn_clean_check"
+        android:textColor="@color/colorWhite"
+        android:textSize="@dimen/text_size" />
+
+    <Button
+        android:id="@+id/home_btn_sap"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/home_btn_height"
+        android:layout_marginBottom="@dimen/home_btn_margin_fluctuate"
+        android:layout_marginEnd="@dimen/margin_side"
+        android:layout_marginStart="@dimen/margin_side"
+        android:layout_marginTop="@dimen/home_btn_margin_fluctuate"
+        android:background="@drawable/btn_bg"
+        android:orientation="horizontal"
+        android:text="@string/home_btn_sap"
+        android:textColor="@color/colorWhite"
+        android:textSize="@dimen/text_size" />
+
+</LinearLayout>
