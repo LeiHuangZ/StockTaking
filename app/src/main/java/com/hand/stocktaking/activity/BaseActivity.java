@@ -4,13 +4,21 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Toolbar;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.hand.stocktaking.R;
@@ -27,7 +35,7 @@ import cn.pda.scan.ScanThread;
 /**
  * @author huang
  */
-public class BaseActivity extends AppCompatActivity {
+public abstract class BaseActivity extends AppCompatActivity {
     /**
      * SP存储工具
      */
@@ -84,6 +92,10 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setLayoutId();
+        //沉浸式状态栏
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
+        setContentView(mLayoutId);
 
         Utils.init(BaseActivity.this);
         // 日志打印工具
@@ -101,8 +113,39 @@ public class BaseActivity extends AppCompatActivity {
         Window window = this.getWindow();
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+        //沉浸式状态栏
+
+        ViewGroup contentFrameLayout = findViewById(Window.ID_ANDROID_CONTENT);
+        View parentView = contentFrameLayout.getChildAt(0);
+        if (parentView != null && Build.VERSION.SDK_INT >= 14) {
+            parentView.setFitsSystemWindows(true);
+        }
+
+        //设置标题栏
+        android.support.v7.widget.Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ActionBar supportActionBar = getSupportActionBar();
+        setTitle();
+        if (supportActionBar != null){
+            supportActionBar.setDisplayHomeAsUpEnabled(true);
+            supportActionBar.setTitle(mTitle);
+        }
         initUtils();
     }
+
+    public int mLayoutId;
+    public abstract void setLayoutId();
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId()==android.R.id.home){
+            onBackPressed();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    public String mTitle;
+    public abstract void setTitle();
 
     @Override
     protected void onDestroy() {//注销广播接收者

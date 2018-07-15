@@ -83,7 +83,7 @@ public interface RetrofitInterface {
      */
     @FormUrlEncoded
     @POST("Order/codeDoororderinfo")
-    Call<DoorBoxsBean> codeToBoxInfo(@Field("code") String code);
+    Call<DoorBoxsBean> codeToBoxInfo(@Field("code") String code, @Field("type") String type);
     /**
      * 收货界面二维码获取订单信息
      */

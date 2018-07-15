@@ -47,7 +47,7 @@ public class SoundUtil {
 	                1);//
 	    }
 	public static void pasue() {
-		sp.pause(0);
+		sp.stop(suondMap.get(1));
 	}
 
 	public static Toast mToast;

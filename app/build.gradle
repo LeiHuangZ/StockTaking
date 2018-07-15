@@ -5,7 +5,7 @@ android {
     defaultConfig {
         applicationId "com.hand.stocktaking"
         minSdkVersion 22
-        targetSdkVersion 27
+        targetSdkVersion 22
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
@@ -44,4 +44,5 @@ dependencies {
     implementation('com.journeyapps:zxing-android-embedded:3.3.0') {
         exclude module: 'support-v4'
     }
+    implementation files('libs/zp_cpcl_new.jar')
 }

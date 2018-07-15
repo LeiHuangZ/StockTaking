@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.hand.stocktaking">
 
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
@@ -11,8 +13,9 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
-        <activity android:name=".activity.LoginActivity" >
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        <activity android:name=".activity.LoginActivity"
+            android:theme="@style/TranslucentTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <action android:name="android.intent.action.VIEW" />
@@ -23,25 +26,28 @@
         </activity>
         <activity
             android:name=".activity.StorageActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+            android:theme="@style/TranslucentTheme"/>
         <activity
-            android:name=".activity.HomeActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+            android:name=".activity.MyApplication"
+            android:theme="@style/TranslucentTheme">
         </activity>
-        <activity
-            android:name=".activity.BaseActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
         <activity
             android:name=".activity.OutboundActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
-        <activity android:name=".activity.DoorActivity" />
-        <activity android:name=".activity.ReceiveActivity" />
-        <activity android:name=".activity.EntryActivity" />
-        <activity android:name=".activity.SearchActivity" />
-        <activity android:name=".activity.CleanActivity">
+            android:theme="@style/TranslucentTheme"/>
+        <activity android:name=".activity.DoorActivity"
+            android:theme="@style/TranslucentTheme"/>
+        <activity android:name=".activity.ReceiveActivity"
+            android:theme="@style/TranslucentTheme"/>
+        <activity android:name=".activity.EntryActivity"
+            android:theme="@style/TranslucentTheme"/>
+        <activity android:name=".activity.SearchActivity"
+            android:theme="@style/TranslucentTheme"/>
+        <activity android:name=".activity.CleanActivity"
+            android:theme="@style/TranslucentTheme">
 
         </activity>
-        <activity android:name=".activity.CleanEnsuerActivity"></activity>
+        <activity android:name=".activity.CleanEnsuerActivity"
+            android:theme="@style/TranslucentTheme"></activity>
     </application>
 
 </manifest>

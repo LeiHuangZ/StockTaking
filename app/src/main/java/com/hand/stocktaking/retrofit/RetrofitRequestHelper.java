@@ -231,7 +231,7 @@ public class RetrofitRequestHelper {
      * @param listener 回调
      */
     public void codeToBoxInfoRequest(String codeStr, final RetrofitRequestListener listener){
-        Call<DoorBoxsBean> call = sRetrofitInterface.codeToBoxInfo(codeStr);
+        Call<DoorBoxsBean> call = sRetrofitInterface.codeToBoxInfo(codeStr, "guard");
         call.enqueue(new Callback<DoorBoxsBean>() {
             @Override
             public void onResponse(Call<DoorBoxsBean> call, Response<DoorBoxsBean> response) {

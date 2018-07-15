@@ -121,6 +121,7 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/colorText"
                 android:gravity="center"
+                android:maxLines="1"
                 android:textSize="@dimen/storage_text_size"
                 android:background="@drawable/spinner_border"/>
         </LinearLayout>
@@ -146,6 +147,7 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/colorText"
                 android:gravity="center"
+                android:maxLines="1"
                 android:textSize="@dimen/storage_text_size"
                 android:background="@drawable/spinner_border"/>
         </LinearLayout>
@@ -171,7 +173,8 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/colorText"
                 android:gravity="center"
-                android:inputType="number"
+                android:maxLines="1"
+                android:inputType="numberDecimal|number"
                 android:textSize="@dimen/storage_text_size"
                 android:background="@drawable/spinner_border"/>
         </LinearLayout>
@@ -197,7 +200,8 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/colorText"
                 android:gravity="center"
-                android:inputType="number"
+                android:maxLines="1"
+                android:inputType="numberDecimal|number"
                 android:textSize="@dimen/storage_text_size"
                 android:background="@drawable/spinner_border"/>
         </LinearLayout>

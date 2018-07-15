@@ -4,147 +4,166 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/colorBlue"
+    android:fitsSystemWindows="true"
     android:orientation="vertical"
     tools:context=".activity.StorageActivity">
 
-    <LinearLayout
-        android:layout_width="wrap_content"
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/storage_layout_padding"
-        android:gravity="center">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/order_buy_id_title"
-            android:textColor="@color/colorText"
-            android:textSize="@dimen/storage_text_size" />
-
-        <Spinner
-            android:id="@+id/storage_spinner_order_number"
-            android:layout_width="@dimen/storage_spinner_width"
-            android:layout_height="@dimen/storage_spinner_height"
-            android:background="@drawable/spinner_border"
-            android:gravity="center"/>
-    </LinearLayout>
+        app:titleTextColor="@color/colorWhite" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:layout_height="match_parent"
+        android:background="@android:color/white"
+        android:orientation="vertical">
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_marginTop="10dp"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/order_buy_id_title"
+                android:textColor="@color/colorText"
+                android:textSize="@dimen/storage_text_size" />
+
+            <Spinner
+                android:id="@+id/storage_spinner_order_number"
+                android:layout_width="@dimen/storage_spinner_width"
+                android:layout_height="@dimen/storage_spinner_height"
+                android:background="@drawable/spinner_border"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingEnd="0dp"
+                android:paddingStart="@dimen/storage_layout_padding"
+                android:paddingTop="@dimen/storage_layout_padding">
+
+                <Button
+                    android:id="@+id/storage_btn_scan"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/storage_btn_height"
+                    android:layout_marginTop="@dimen/storage_btn_margin_fluctuate"
+                    android:background="@drawable/btn_bg"
+                    android:orientation="horizontal"
+                    android:text="@string/storage_btn_scan"
+                    android:textColor="@color/colorWhite"
+                    android:textSize="@dimen/storage_text_size" />
+
+                <Button
+                    android:id="@+id/storage_btn_record"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/storage_btn_height"
+                    android:layout_marginTop="@dimen/storage_btn_margin_fluctuate"
+                    android:background="@drawable/btn_bg"
+                    android:orientation="horizontal"
+                    android:text="@string/storage_btn_record"
+                    android:textColor="@color/colorWhite"
+                    android:textSize="@dimen/storage_text_size" />
+
+                <Button
+                    android:id="@+id/storage_btn_ensure"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/storage_btn_height"
+                    android:layout_marginTop="@dimen/storage_btn_margin_fluctuate"
+                    android:background="@drawable/btn_bg"
+                    android:orientation="horizontal"
+                    android:text="@string/storage_btn_ensure"
+                    android:textColor="@color/colorWhite"
+                    android:textSize="@dimen/storage_text_size" />
+
+            </LinearLayout>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="280dp"
+                android:layout_marginEnd="@dimen/storage_layout_padding"
+                android:layout_marginStart="@dimen/storage_layout_padding"
+                android:layout_marginTop="@dimen/storage_layout_padding"
+                android:background="@drawable/spinner_border">
+
+                <ScrollView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center">
+
+                    <TextView
+                        android:id="@+id/storage_tv_result"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/storage_text_size" />
+                </ScrollView>
+            </HorizontalScrollView>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:paddingEnd="0dp"
             android:paddingStart="@dimen/storage_layout_padding"
             android:paddingTop="@dimen/storage_layout_padding">
 
-            <Button
-                android:id="@+id/storage_btn_scan"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/storage_btn_height"
-                android:layout_marginTop="@dimen/storage_btn_margin_fluctuate"
-                android:background="@drawable/btn_bg"
-                android:orientation="horizontal"
-                android:text="@string/storage_btn_scan"
-                android:textColor="@color/colorWhite"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/storage_tv_sum"
+                android:textColor="@color/colorText"
                 android:textSize="@dimen/storage_text_size" />
 
-            <Button
-                android:id="@+id/storage_btn_record"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/storage_btn_height"
-                android:layout_marginTop="@dimen/storage_btn_margin_fluctuate"
-                android:background="@drawable/btn_bg"
-                android:orientation="horizontal"
-                android:text="@string/storage_btn_record"
-                android:textColor="@color/colorWhite"
+            <TextView
+                android:id="@+id/storage_tv_sum"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/storage_view_margin"
+                android:text="@string/zero"
+                android:textColor="@color/colorText"
                 android:textSize="@dimen/storage_text_size" />
 
-            <Button
-                android:id="@+id/storage_btn_ensure"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/storage_btn_height"
-                android:layout_marginTop="@dimen/storage_btn_margin_fluctuate"
-                android:background="@drawable/btn_bg"
-                android:orientation="horizontal"
-                android:text="@string/storage_btn_ensure"
-                android:textColor="@color/colorWhite"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/storage_tv_count"
+                android:textColor="@color/colorText"
+                android:textSize="@dimen/storage_text_size" />
+
+            <TextView
+                android:id="@+id/storage_tv_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/zero"
+                android:textColor="@color/colorText"
                 android:textSize="@dimen/storage_text_size" />
 
         </LinearLayout>
 
-        <HorizontalScrollView
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/storage_rcv"
             android:layout_width="match_parent"
-            android:layout_height="300dp">
-        <ScrollView
-            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_marginEnd="@dimen/storage_layout_padding"
-            android:layout_marginStart="@dimen/storage_layout_padding"
-            android:layout_marginTop="@dimen/storage_layout_padding"
-            android:layout_weight="1"
-            android:background="@drawable/spinner_border">
-
-            <TextView
-                android:id="@+id/storage_tv_result"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textSize="@dimen/storage_text_size" />
-        </ScrollView>
-        </HorizontalScrollView>
+            android:layout_marginTop="@dimen/storage_view_margin"
+            android:layout_weight="1" />
 
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingEnd="0dp"
-        android:paddingStart="@dimen/storage_layout_padding"
-        android:paddingTop="@dimen/storage_layout_padding">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/storage_tv_sum"
-            android:textColor="@color/colorText"
-            android:textSize="@dimen/storage_text_size" />
-
-        <TextView
-            android:id="@+id/storage_tv_sum"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="@dimen/storage_view_margin"
-            android:text="@string/zero"
-            android:textColor="@color/colorText"
-            android:textSize="@dimen/storage_text_size" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/storage_tv_count"
-            android:textColor="@color/colorText"
-            android:textSize="@dimen/storage_text_size" />
-
-        <TextView
-            android:id="@+id/storage_tv_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/zero"
-            android:textColor="@color/colorText"
-            android:textSize="@dimen/storage_text_size" />
-
-    </LinearLayout>
-
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/storage_rcv"
-        android:layout_marginTop="@dimen/storage_view_margin"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1"/>
 </LinearLayout>

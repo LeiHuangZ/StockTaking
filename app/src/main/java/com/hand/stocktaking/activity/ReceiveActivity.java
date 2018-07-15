@@ -118,6 +118,7 @@ public class ReceiveActivity extends BaseActivity {
             mWeakReference = new WeakReference<>(activity);
         }
 
+        @Override
         public void handleMessage(Message msg) {
             ReceiveActivity receiveActivity = mWeakReference.get();
             if (msg.what == ScanThread.SCAN) {
@@ -126,7 +127,6 @@ public class ReceiveActivity extends BaseActivity {
                 receiveActivity.showProgressDialog("正在获取订单信息....");
                 receiveActivity.codeToBoxInfo(data);
                 SoundUtil.play(1, 0);
-                receiveActivity.mQrOrRfid = 1;
             } else if (msg.what == 1) {
                 SoundUtil.play(1, 0);
                 receiveActivity.mReceiveTvCount.setText(String.valueOf(receiveActivity.mFoundEpcStrList.size()));
@@ -144,7 +144,7 @@ public class ReceiveActivity extends BaseActivity {
                 if (isStart) {
                     LogUtils.e("RFID scan run !");
                     List<Reader.TAGINFO> list1;
-                    list1 = HomeActivity.mUhfrManager.tagInventoryByTimer((short) 50);
+                    list1 = MyApplication.mUhfrManager.tagInventoryByTimer((short) 50);
                     if (list1 != null && list1.size() > 0) {
                         for (Reader.TAGINFO tfs : list1) {
                             byte[] epcdata = tfs.EpcId;
@@ -229,10 +229,18 @@ public class ReceiveActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_receive);
         ButterKnife.bind(this);
 
         initView();
+    }
+    @Override
+    public void setLayoutId() {
+        mLayoutId = R.layout.activity_receive;
+    }
+
+    @Override
+    public void setTitle() {
+        mTitle = "收货界面";
     }
 
     @OnClick({R.id.receive_btn_scan, R.id.receive_btn_fast_receive, R.id.receive_btn_inventory, R.id.receive_btn_ensure})
@@ -287,6 +295,8 @@ public class ReceiveActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         unregisterReceiver(keyReceiver);
+        isStart = false;
+        isRunning = false;
         if (scanThread != null) {
             isStart = false;
             scanThread.interrupt();
@@ -295,6 +305,7 @@ public class ReceiveActivity extends BaseActivity {
         super.onDestroy();
     }
 
+    @Override
     public void initUtils() {
         try {
             new Thread(inventoryTask).start();
@@ -340,7 +351,11 @@ public class ReceiveActivity extends BaseActivity {
 
             @Override
             public void requestFail(Throwable t) {
-                ToastUtils.showShortToast("获取失败，请确认网络连接是否正常及二维码是否有效");
+                if ( t== null || t.getMessage().contains("java.lang.IllegalStateException")){
+                    ToastUtils.showShortToast("获取失败，无效的二维码参数");
+                }else {
+                    ToastUtils.showShortToast("获取失败，请确认网络连接是否正常");
+                }
                 hideProgressDialog();
             }
         });
@@ -399,7 +414,7 @@ public class ReceiveActivity extends BaseActivity {
             mReceiveTvBoxCount.append(String.valueOf(entry.getValue()));
             mReceiveTvBoxCount.append("个\n");
         }
-        mReceiveBtnScan.setVisibility(View.INVISIBLE);
+        mReceiveBtnScan.setVisibility(View.GONE);
         mReceiveLlSecond.setVisibility(View.VISIBLE);
     }
     /**
@@ -459,28 +474,33 @@ public class ReceiveActivity extends BaseActivity {
     /**
      * 开始盘存EPC
      */
+    @Override
     public void runInventory() {
+        if (MyApplication.mUhfrManager == null){
+            ToastUtils.showShortToast("RFID异常，请退出应用重启");
+            return;
+        }
         LogUtils.e("runInventory !");
         if (keyControl) {
             keyControl = false;
             if (!isStart) {
                 // 屏蔽按钮
                 mReceiveBtnEnsure.setClickable(false);
-                HomeActivity.mUhfrManager.setCancleInventoryFilter();
-                HomeActivity.mUhfrManager.setCancleFastMode();
+                MyApplication.mUhfrManager.setCancleInventoryFilter();
+                MyApplication.mUhfrManager.setCancleFastMode();
                 mReceiveBtnInventory.setText("停止扫描");
                 isStart = true;
             } else {
+                isStart = false;
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            HomeActivity.mUhfrManager.stopTagInventory();
+                            MyApplication.mUhfrManager.stopTagInventory();
                             try {
                                 Thread.sleep(100);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                            isStart = false;
 
                             // 比对标签信息
                             compareTags();
@@ -498,6 +518,7 @@ public class ReceiveActivity extends BaseActivity {
      */
     private boolean isFirst = true;
     private boolean isFirst2 = true;
+    boolean isRemix = false;
     private void compareTags() {
         runOnUiThread(new Runnable() {
             @Override
@@ -525,7 +546,7 @@ public class ReceiveActivity extends BaseActivity {
             }else if (mServerEpcStrList.size() == mFoundEpcStrList.size()){
                 mReceiveType = "2";
             }else if (mServerEpcStrList.size() > mFoundEpcStrList.size()){
-                mReceiveType = "0";
+                mReceiveType = "3";
             }
 
         }
@@ -544,11 +565,14 @@ public class ReceiveActivity extends BaseActivity {
                         mReceiveTvResult.append("，RF标签：");
                         mReceiveTvResult.append(mServerBoxInfoList.get(finalI).getRfid());
                         mReceiveTvResult.append("箱子\n");
+                        SoundUtil.pasue();
                         SoundUtil.play(2, 0);
                     }
                 });
+                isRemix = true;
             }
         }
+
             mRetrofitRequestHelper.outOrderRequest(mRedundantEpcStrList, new RetrofitRequestHelper.RetrofitRequestListener() {
                 @Override
                 public void requestSuccess(Response response) {
@@ -559,28 +583,79 @@ public class ReceiveActivity extends BaseActivity {
                         LogUtils.e("code = " + jsonObject.getString("code"));
                         if ("200".equals(jsonObject.getString("code"))) {
                             JSONArray data = jsonObject.getJSONArray("data");
-                            LogUtils.e("code = " + data.get(0));
-                            JSONObject jsonObject1 = data.getJSONObject(0);
-                            String sign = jsonObject1.getString("sign");
-                            String tags = jsonObject1.getString("tags");
-                            if (mRedundantEpcStrList.size() != 0 && mServerEpcStrList.size() >= mFoundEpcStrList.size()){
-                                if (isFirst) {
-                                    mReceiveTvResult.append("多出\n");
-                                    isFirst = false;
-                                }
+                            int length = data.length();
+                            LogUtils.e("code = " + length);
+                            List<String> tempEpcList = new ArrayList<>();
+                            for (int i = 0; i < length; i++) {
+                                JSONObject jsonObject1 = data.getJSONObject(i);
+                                String sign = jsonObject1.getString("sign");
+                                String tags = jsonObject1.getString("tags");
+                                if (mRedundantEpcStrList.size() != 0 && isRemix){
+                                    if (isFirst) {
+                                        mReceiveTvResult.append("多出\n");
+                                        isFirst = false;
+                                    }
 
-                            }else {
-                                if (isFirst) {
-                                    mReceiveTvResult.setText("扫描不通过，多出\n");
-                                    isFirst = false;
+                                }else {
+                                    if (isFirst && isFirst2) {
+                                        mReceiveTvResult.setText("扫描不通过，多出\n");
+                                        isFirst = false;
+                                    }
+                                }
+                                tempEpcList.add(tags);
+                                mReceiveTvResult.append("型号");
+                                mReceiveTvResult.append(sign);
+                                mReceiveTvResult.append("，RF标签：");
+                                mReceiveTvResult.append(tags);
+                                mReceiveTvResult.append("箱子\n");
+                            }
+                            for (String epc:mRedundantEpcStrList) {
+                                boolean isReachable = true;
+                                for (String epc2:tempEpcList) {
+                                    if (epc.equals(epc2)){
+                                        isReachable = false;
+                                    }
+                                }
+                                if (isReachable){
+                                    if (mRedundantEpcStrList.size() != 0 && isRemix){
+                                        if (isFirst) {
+                                            mReceiveTvResult.append("多出\n");
+                                            isFirst = false;
+                                        }
+
+                                    }else {
+                                        if (isFirst && isFirst2) {
+                                            mReceiveTvResult.setText("扫描不通过，多出\n");
+                                            isFirst = false;
+                                        }
+                                    }
+                                    mReceiveTvResult.append("未知标签：");
+                                    mReceiveTvResult.append(epc);
+                                    mReceiveTvResult.append("\n");
                                 }
                             }
-                            mReceiveTvResult.append("型号");
-                            mReceiveTvResult.append(sign);
-                            mReceiveTvResult.append("，RF标签：");
-                            mReceiveTvResult.append(tags);
-                            mReceiveTvResult.append("箱子\n");
+                            SoundUtil.pasue();
                             SoundUtil.play(2, 0);
+                        }else {
+                            if (mRedundantEpcStrList.size() != 0){
+                                if (isRemix){
+                                    if (isFirst) {
+                                        mReceiveTvResult.append("多出\n");
+                                        isFirst = false;
+                                    }
+
+                                }else {
+                                    if (isFirst && isFirst2) {
+                                        mReceiveTvResult.setText("扫描不通过，多出\n");
+                                        isFirst = false;
+                                    }
+                                }
+                                for(String epc:mRedundantEpcStrList){
+                                    mReceiveTvResult.append("未知标签：");
+                                    mReceiveTvResult.append(epc);
+                                    mReceiveTvResult.append("\n");
+                                }
+                            }
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -648,7 +723,26 @@ public class ReceiveActivity extends BaseActivity {
                             }
                         }).start();
                     }else {
-                        ToastUtils.showShortToast("收货失败，" + jsonObject.getString("message"));
+                        String message = jsonObject.getString("message");
+                        String error = "";
+                        if ("recvOrder.type-error".equals(message)){
+                            error = "订单类型不存在";
+                        }else if ("recvOrder.userid-error".equals(message)){
+                            error = "用户id不存在";
+                        }else if ("recvOrder.orderid-error".equals(message)){
+                            error = "订单号不存在";
+                        }else if ("recvOrder.tags-error".equals(message)){
+                            error = "标签列表不存在";
+                        }else if ("recvOrder.orderinfo-error".equals(message)){
+                            error = "订单不存在";
+                        }else if ("recvOrder.tags.unknown-error".equals(message)){
+                            error = "未知标签";
+                        }else if ("recvOrder.type.content-error".equals(message)){
+                            error = "订单类型错误";
+                        }else if ("recvOrder-error".equals(message)){
+                            error = "收货失败";
+                        }
+                        ToastUtils.showShortToast("收货失败，错误信息：" + error);
                         hideProgressDialog();
                     }
                 } catch (Exception e) {

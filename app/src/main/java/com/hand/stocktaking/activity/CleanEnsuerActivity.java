@@ -55,34 +55,7 @@ public class CleanEnsuerActivity extends BaseActivity {
     TextView mCleanensureTvResult;
     private String mTime;
 
-    /**
-     * 按键广播接收者 用于接受按键广播 触发扫描
-     */
-    private class MyKeyReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int keyCode = intent.getIntExtra("keyCode", 0);
-            // 为兼容早期版本机器
-            if (keyCode == 0) {
-                keyCode = intent.getIntExtra("keycode", 0);
-            }
-            boolean keyDown = intent.getBooleanExtra("keydown", false);
-            if (!keyDown) {
-                // 根据需要在对应的按键的键值中开启扫描,
-                switch (keyCode) {
-                    case KeyEvent.KEYCODE_F3:
-                    case KeyEvent.KEYCODE_F4:
-                        // uhf扫描
-                        runInventory();
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-    }
-
-    private MyKeyReceiver keyReceiver = new MyKeyReceiver();
+    private KeyReceiver keyReceiver = new KeyReceiver();
     /**
      * 盘存EPC的子线程
      */
@@ -93,7 +66,7 @@ public class CleanEnsuerActivity extends BaseActivity {
                 if (isStart) {
                     LogUtils.e("RFID scan run !");
                     List<Reader.TAGINFO> list1;
-                    list1 = HomeActivity.mUhfrManager.tagInventoryByTimer((short) 50);
+                    list1 = MyApplication.mUhfrManager.tagInventoryByTimer((short) 50);
                     ArrayList<String> list = new ArrayList<>();
                     if (list1 != null && list1.size() > 0) {
                         for (Reader.TAGINFO tfs : list1) {
@@ -148,18 +121,28 @@ public class CleanEnsuerActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_clean_ensure);
         ButterKnife.bind(this);
         mEntryRcvAdapter = new CleanEnsureRcvAdapter();
         mCleanRv.setLayoutManager(new LinearLayoutManager(CleanEnsuerActivity.this));
         mCleanRv.setAdapter(mEntryRcvAdapter);
+        mQrOrRfid = 1;
+    }
+
+    @Override
+    public void setLayoutId() {
+        mLayoutId = R.layout.activity_clean_ensure;
+    }
+
+    @Override
+    public void setTitle() {
+        mTitle = "清洁检查";
     }
 
     @Override
     public void initUtils() {
         new Thread(inventoryTask).start();
         //注册按键广播接收者
-        keyReceiver = new MyKeyReceiver();
+        keyReceiver = new KeyReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction("android.rfid.FUN_KEY");
         filter.addAction("android.intent.action.FUN_KEY");
@@ -169,8 +152,8 @@ public class CleanEnsuerActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         unregisterReceiver(keyReceiver);
-        isRunning = false;
         isStart = false;
+        isRunning = false;
         super.onDestroy();
     }
 
@@ -182,10 +165,15 @@ public class CleanEnsuerActivity extends BaseActivity {
     /**
      * 开始盘存EPC
      */
+    @Override
     public void runInventory() {
+        if (MyApplication.mUhfrManager == null){
+            ToastUtils.showShortToast("RFID异常，请退出应用重启");
+            return;
+        }
         LogUtils.e("runInventory !");
         mTime = mCleanEdtCleanType.getText().toString();
-        if (mTime.equals("") || mTime.equals("0") || Integer.valueOf(mTime) < 0){
+        if (mTime.equals("") || mTime.equals("0") || Integer.valueOf(mTime) < 0) {
             ToastUtils.showShortToast("请输入正确的天数");
             return;
         }
@@ -193,21 +181,21 @@ public class CleanEnsuerActivity extends BaseActivity {
             keyControl = false;
             if (!isStart) {
                 // 屏蔽按钮
-                HomeActivity.mUhfrManager.setCancleInventoryFilter();
-                HomeActivity.mUhfrManager.setCancleFastMode();
+                MyApplication.mUhfrManager.setCancleInventoryFilter();
+                MyApplication.mUhfrManager.setCancleFastMode();
                 mCleanBtnScan.setText("停止扫描");
                 isStart = true;
             } else {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        HomeActivity.mUhfrManager.stopTagInventory();
+                        MyApplication.mUhfrManager.stopTagInventory();
+                        isStart = false;
                         try {
-                            Thread.sleep(100);
+                            Thread.sleep(200);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                        isStart = false;
 
                         // 比对清洁时间
                         compare();
@@ -264,11 +252,12 @@ public class CleanEnsuerActivity extends BaseActivity {
      * 比对
      */
     private boolean isNormal = true;
-    private void compare(){
+
+    private void compare() {
         long l = System.currentTimeMillis();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-mm-dd hh:MM:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Integer integer = Integer.valueOf(mTime);
-        long time = integer*24*60*60*1000;
+        long time = integer * 24 * 60 * 60 * 1000;
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -279,32 +268,44 @@ public class CleanEnsuerActivity extends BaseActivity {
             final CleanEnsureBoxInfo cleanEnsureBoxInfo = mCleanBoxInfoList.get(i);
             String lastClearTime = cleanEnsureBoxInfo.getLastClearTime();
             try {
-                if (lastClearTime.equals("null") || lastClearTime.equals("")){
+                if (lastClearTime.equals("null") || lastClearTime.equals("")) {
+                    SoundUtil.pasue();
                     SoundUtil.play(2, 0);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            mCleanensureTvResult.append("型号" + cleanEnsureBoxInfo.getSign()+","+"标签号"+cleanEnsureBoxInfo.getTags()+"箱子从未清洁\n");
+                            mCleanensureTvResult.append("型号" + cleanEnsureBoxInfo.getSign() + "," + "标签号" + cleanEnsureBoxInfo.getTags() + "箱子从未清洁\n");
                         }
                     });
-                    isNormal =false;
+                    isNormal = false;
                     continue;
                 }
                 Date date = simpleDateFormat.parse(lastClearTime);
                 long dateTime = date.getTime();
-                if (l - dateTime > time){
+                if (l - dateTime > time) {
+                    SoundUtil.pasue();
                     SoundUtil.play(2, 0);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            mCleanensureTvResult.append("型号" + cleanEnsureBoxInfo.getSign()+","+"标签号"+cleanEnsureBoxInfo.getTags()+"箱子超过"+mTime+"天未清洁\n");
+                            mCleanensureTvResult.append("型号" + cleanEnsureBoxInfo.getSign() + "," + "标签号" + cleanEnsureBoxInfo.getTags() + "箱子超过" + mTime + "天未清洁\n");
                         }
                     });
-                    isNormal =false;
+                    isNormal = false;
                 }
             } catch (ParseException e) {
                 e.printStackTrace();
             }
         }
+        if (isNormal) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mCleanensureTvResult.setText("确认完毕，清洁正常");
+
+                }
+            });
+        }
+        isNormal = true;
     }
 }

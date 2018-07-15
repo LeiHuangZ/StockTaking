@@ -1,13 +1,19 @@
 package com.hand.stocktaking.activity;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.ArrayMap;
+import android.util.Size;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
@@ -16,6 +22,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,28 +33,20 @@ import com.hand.stocktaking.adapter.OutBoxInfo;
 import com.hand.stocktaking.adapter.OutDialogBoxInfo;
 import com.hand.stocktaking.adapter.OutDialogRcvAdapter;
 import com.hand.stocktaking.adapter.OutRcvAdapter;
-import com.hand.stocktaking.adapter.StorageBoxInfo;
 import com.hand.stocktaking.retrofit.CompanyBean;
 import com.hand.stocktaking.retrofit.RetrofitRequestHelper;
-import com.hand.stocktaking.retrofit.StockoutBean;
+import com.hand.stocktaking.utils.CaptureUtils;
 import com.hand.stocktaking.utils.LogUtils;
-import com.hand.stocktaking.utils.NetPrinter;
 import com.hand.stocktaking.utils.SPUtils;
 import com.hand.stocktaking.utils.SoundUtil;
 import com.hand.stocktaking.utils.ToastUtils;
-import com.hand.stocktaking.utils.Utils;
 import com.hand.stocktaking.utils.ZxingUtils;
 import com.uhf.api.cls.Reader;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +57,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import okhttp3.ResponseBody;
 import retrofit2.Response;
+import zpSDK.zpSDK.zpBluetoothPrinter;
 
 /**
  * @author huang
@@ -96,10 +96,15 @@ public class OutboundActivity extends BaseActivity {
     private String plate;
     private boolean isBoxNull;
 
+    /**
+     * for test
+     */
+    private LinearLayout mContent;
+    private ImageView mTestImgView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_outbound);
         ButterKnife.bind(this);
 
         new Thread(inventoryTask).start();
@@ -110,6 +115,19 @@ public class OutboundActivity extends BaseActivity {
 
         mOutBtnScan.setClickable(false);
         mOutBtnOut.setClickable(false);
+
+        // for test
+        mContent = findViewById(R.id.content);
+        mTestImgView = findViewById(R.id.test_img);
+    }
+    @Override
+    public void setLayoutId() {
+        mLayoutId = R.layout.activity_outbound;
+    }
+
+    @Override
+    public void setTitle() {
+        mTitle = "物料出库";
     }
 
     private void initData() {
@@ -215,8 +233,12 @@ public class OutboundActivity extends BaseActivity {
 
     @Override
     protected void onDestroy() {
-        isRunning = false;
-        isStart = false;
+        if (scanThread != null) {
+            isStart = false;
+            isRunning = false;
+            scanThread.interrupt();
+            scanThread.close();
+        }
         super.onDestroy();
     }
 
@@ -362,7 +384,7 @@ public class OutboundActivity extends BaseActivity {
                 if (isStart) {
 //                    LogUtils.e("RFID scan run !");
                     List<Reader.TAGINFO> list1;
-                    list1 = HomeActivity.mUhfrManager.tagInventoryByTimer((short) 50);
+                    list1 = MyApplication.mUhfrManager.tagInventoryByTimer((short) 50);
                     ArrayList<String> list = new ArrayList<>();
                     if (list1 != null && list1.size() > 0) {
                         for (Reader.TAGINFO tfs : list1) {
@@ -386,13 +408,18 @@ public class OutboundActivity extends BaseActivity {
         }
     };
 
+    @Override
     public void runInventory() {
+        if (MyApplication.mUhfrManager == null){
+            ToastUtils.showShortToast("RFID异常，请退出应用重启");
+            return;
+        }
         LogUtils.e("runInventory !");
         if (keyControl) {
             keyControl = false;
             if (!isStart) {
-                HomeActivity.mUhfrManager.setCancleInventoryFilter();
-                HomeActivity.mUhfrManager.setCancleFastMode();
+                MyApplication.mUhfrManager.setCancleInventoryFilter();
+                MyApplication.mUhfrManager.setCancleFastMode();
                 mOutBtnScan.setText(getResources().getString(R.string.storage_btn_scan_stop));
                 isStart = true;
             } else {
@@ -400,7 +427,7 @@ public class OutboundActivity extends BaseActivity {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        HomeActivity.mUhfrManager.stopTagInventory();
+                        MyApplication.mUhfrManager.stopTagInventory();
                         try {
                             Thread.sleep(100);
                         } catch (Exception e) {
@@ -422,6 +449,16 @@ public class OutboundActivity extends BaseActivity {
                 runInventory();
                 break;
             case R.id.out_btn_out:
+                final ArrayList<OutDialogBoxInfo> outBoxInfos = new ArrayList<>();
+                for (int i = 0; i < 8; i++) {
+                    OutDialogBoxInfo outDialogBoxInfo = new OutDialogBoxInfo();
+                    outDialogBoxInfo.setBoxType("000001" + i);
+                    outDialogBoxInfo.setRfid("2" + i);
+                    outBoxInfos.add(outDialogBoxInfo);
+                }
+//                startPrint("stock57591525438209", "否", "已发货", "2018-05-04 20:50:09", "测试1", "公司名2", "公司名1", "运输公司1",
+//                        "粤B-9089382", "stockout573728237129831974", outBoxInfos);
+
                 String plate = mOutEdtPlate.getText().toString().trim();
                 isBoxNull = mOutDbNull.isChecked();
                 String userId = mSPUtils.getString(SPUtils.KEY_USER_ID);
@@ -461,7 +498,8 @@ public class OutboundActivity extends BaseActivity {
                             try {
                                 final ResponseBody body1 = (ResponseBody) response.body();
                                 final JSONObject body = new JSONObject(body1.string());
-                                if (body.getString("code").equals("200")) {
+                                String code = body.getString("code");
+                                if (code.equals("200")) {
                                     new Thread(new Runnable() {
                                         @Override
                                         public void run() {
@@ -476,6 +514,7 @@ public class OutboundActivity extends BaseActivity {
                                                 final TextView recvAddressTv = view2.findViewById(R.id.out_ensure_tv_recv_company);
                                                 final TextView transCompanyTv = view2.findViewById(R.id.out_ensure_tv_trans_company);
                                                 final TextView transPlateTv = view2.findViewById(R.id.out_ensure_tv_trans_plate);
+                                                final Button printButton = view2.findViewById(R.id.out_ensure_btn_print);
                                                 JSONObject dataBean = body.getJSONObject("data");
                                                 final String orderId = dataBean.getString("orderid");
                                                 final String boxNull;
@@ -524,6 +563,7 @@ public class OutboundActivity extends BaseActivity {
                                                     outBoxInfo.setRfid(num);
                                                     outBoxInfos.add(outBoxInfo);
                                                 }
+                                                final String finalOrderStatus1 = orderStatus;
                                                 runOnUiThread(new Runnable() {
                                                     @Override
                                                     public void run() {
@@ -544,6 +584,12 @@ public class OutboundActivity extends BaseActivity {
                                                         OutDialogRcvAdapter outDialogRcvAdapter = new OutDialogRcvAdapter();
                                                         recyclerView.setAdapter(outDialogRcvAdapter);
                                                         outDialogRcvAdapter.setList(outBoxInfos);
+                                                        printButton.setOnClickListener(new View.OnClickListener() {
+                                                            @Override
+                                                            public void onClick(View v) {
+                                                                startPrint(orderId, boxNull, finalOrderStatus1, sendTime, sendPerson, sendAddress, recvAddress, transCompany, transPlate, qrStr, outBoxInfos);
+                                                            }
+                                                        });
                                                         dialog.setView(view2);
                                                         dialog.show();
                                                         WindowManager.LayoutParams layoutParams = dialog.getWindow().getAttributes();
@@ -559,7 +605,33 @@ public class OutboundActivity extends BaseActivity {
                                         }
                                     }).start();
                                 } else {
-                                    ToastUtils.showShortToast("订单生成失败，错误信息：" + body.getString("message"));
+                                    String message = body.getString("message");
+                                    String error = "";
+                                    if ("stockout.send_company_id-error".equals(message)){
+                                        error = "发货公司id不存在";
+                                    }else if ("stockout.recv_company_id-error".equals(message)){
+                                        error = "收货公司id不存在";
+                                    }else if ("stockout.send_userid-error".equals(message)){
+                                        error = "发货人id不存在";
+                                    }else if ("stockout.trans_company_id-error".equals(message)){
+                                        error = "运输公司id不存在";
+                                    }else if ("stockout.trans_company_carnum-error".equals(message)){
+                                        error = "运输车牌号不存在";
+                                    }else if ("stockout.box_ids-error".equals(message)){
+                                        error = "箱子id集合不存在";
+                                    }else if ("stockout.is_emptybox-error".equals(message)){
+                                        error = "是否空箱内容错误";
+                                    }else if ("stockout.box_ids.num-error".equals(message)){
+                                        error = "箱子id集合内容错误";
+                                    }else if ("stockout.box_ids.company-error".equals(message)){
+                                        error = "该箱子不属于发货公司";
+                                    }else if ("stockout.send_recv_company_id_same-error".equals(message)){
+                                        error = "发货公司和收货公司地址不能相同";
+                                    }
+                                    else if ("stockout-error".equals(message)){
+                                        error = "生成订单错误";
+                                    }
+                                    ToastUtils.showShortToast("订单生成失败，错误信息：" + error);
                                 }
                                 hideProgressDialog();
                             } catch (Exception e) {
@@ -578,6 +650,129 @@ public class OutboundActivity extends BaseActivity {
                     ToastUtils.showShortToast("请将信息填写完整");
                 }
                 break;
+                default:
+                    break;
         }
+    }
+
+    private void startPrint(String orderId, String boxNull, String finalOrderStatus, String sendTime,String sendPerson, String sendAddress, String recvAddress,
+                            String transCompany, String transPlate, String qrStr, ArrayList<OutDialogBoxInfo> outBoxInfos){
+        if (listbluetoothdevice()){
+            print(orderId, boxNull, finalOrderStatus, sendTime, sendPerson, sendAddress, recvAddress, transCompany, transPlate, qrStr, outBoxInfos);
+        }
+    }
+
+    public static BluetoothAdapter myBluetoothAdapter;
+    zpBluetoothPrinter printer = new zpBluetoothPrinter(OutboundActivity.this);
+    private boolean listbluetoothdevice() {
+        if ((myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()) == null) {
+            Toast.makeText(this, "没有找到蓝牙适配器", Toast.LENGTH_LONG).show();
+            return false;
+        }
+
+        if (!myBluetoothAdapter.isEnabled()) {
+            Toast.makeText(this, "蓝牙未开启", Toast.LENGTH_LONG).show();
+            openSetting();
+            return false;
+        }
+
+        Set<BluetoothDevice> pairedDevices = myBluetoothAdapter.getBondedDevices();
+        if (pairedDevices.size() <= 0) {
+            Toast.makeText(this, "请先连接蓝牙打印机", Toast.LENGTH_LONG).show();
+            openSetting();
+            return false;
+        }else {
+            for (BluetoothDevice device :
+                    pairedDevices) {
+                String address = device.getAddress();
+                printer.connect(address);
+            }
+        }
+        return true;
+    }
+
+    private void openSetting() {
+        Intent intent = new Intent();
+        intent.setAction(Settings.ACTION_BLUETOOTH_SETTINGS);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void print(String orderId, String boxNull, String finalOrderStatus, String sendTime,String sendPerson, String sendAddress, String recvAddress,
+                       String transCompany, String transPlate, String qrStr, ArrayList<OutDialogBoxInfo> outBoxInfos){
+        int size = outBoxInfos.size();
+        printer.pageSetup(700, 380 + 24 + 24 * size + 140);
+//        printer.drawText(220, 5, "订单信息", 2, 0, 0, false, false);
+        int pixel = 35;
+        printer.drawText(84 + pixel, 5 + 24 -22, "订单号：", 2, 0, 0, false, false);
+        printer.drawText(180 + pixel, 5 + 24 -22, orderId, 2, 0, 0, false, false);
+        printer.drawText(60 + pixel, 5 + 48 -22, "是否空箱：", 2, 0, 0, false, false);
+        printer.drawText(180 + pixel, 5 + 48 -22, boxNull, 2, 0, 0, false, false);
+        printer.drawText(60 + pixel, 5 + 72 -22, "订单状态：", 2, 0, 0, false, false);
+        printer.drawText(180 + pixel, 5 + 72 -22, finalOrderStatus, 2, 0, 0, false, false);
+        printer.drawText(60 + pixel, 5 + 96 -22, "发出时间：", 2, 0, 0, false, false);
+        printer.drawText(180 + pixel, 5 + 96 -22, sendTime, 2, 0, 0, false, false);
+        printer.drawText(84 + pixel, 5 + 120 -22, "发货人：", 2, 0, 0, false, false);
+        printer.drawText(180 + pixel, 5 + 120 -22, sendPerson, 2, 0, 0, false, false);
+        printer.drawText(60 + pixel, 5 + 144 -22, "发货地址：", 2, 0, 0, false, false);
+        printer.drawText(180 + pixel, 5 + 144 -22, sendAddress, 2, 0, 0, false, false);
+        printer.drawText(60 + pixel, 5 + 168 -22, "收货地址：", 2, 0, 0, false, false);
+        printer.drawText(180 + pixel, 5 + 168 -22, recvAddress, 2, 0, 0, false, false);
+        printer.drawText(60 + pixel, 5 + 192 -22, "运输公司：", 2, 0, 0, false, false);
+        printer.drawText(180 + pixel, 5 + 192 -22, transCompany, 2, 0, 0, false, false);
+        printer.drawText(36 + pixel, 5 + 216 -22, "运输车牌号：", 2, 0, 0, false, false);
+        printer.drawText(180 + pixel, 5 + 216 -22, transPlate, 2, 0, 0, false, false);
+        printer.drawQrCode(220, 5 + 245 -22, qrStr, 0, 2, 0);
+
+        printer.drawText(120, 5 + 379, "箱子型号", 2, 0, 0, false, false);
+        printer.drawText(330, 5 + 379, "箱子数量", 2, 0, 0, false, false);
+        for (int i = 0; i < outBoxInfos.size(); i++) {
+            OutDialogBoxInfo info = outBoxInfos.get(i);
+            printer.drawText(120, 5 + 403 + (24*i), info.getBoxType(), 2, 0, 0, false, false);
+            printer.drawText(330, 5 + 403 + (24*i), info.getRfid(), 2, 0, 0, false, false);
+        }
+        printer.print(0, 0);
+//        if (outBoxInfos.size() == 0) {
+//            return;
+//        }
+//        boolean out =false;
+//        int size = outBoxInfos.size();
+//        int count;
+//        if (size >= 11) {
+//            float i = size % 11;
+//            count = size /11;
+//            if (i > 0){
+//                count++;
+//            }
+//        }else {
+//            count = 1;
+//        }
+//        for (int i = 0; i < count; i++) {
+//            printer.pageSetup(700, 410);
+//            printer.drawText(120, 5, "箱子型号", 2, 0, 0, false, false);
+//            printer.drawText(330, 5, "箱子数量", 2, 0, 0, false, false);
+//            for (int j = 0; j < 11; j++) {
+//                int index = (11 * i) + j;
+//                if (index > outBoxInfos.size() - 1){
+//                    printer.print(0, 0);
+//                    out = true;
+//                    return;
+//                }
+//                printer.drawText(120 + 5, 5 + 30 * (j+1), outBoxInfos.get(index).getBoxType(), 2, 0, 0, false, false);
+//                printer.drawText(330 + 30, 5 + 30 * (j+1), outBoxInfos.get(index).getRfid(), 2, 0, 0, false, false);
+//                if (j == 10) {
+//                    printer.print(0, 0);
+//                    out = true;
+//                    break;
+//                }
+//            }
+//        }
+//        if (!out){
+//            printer.print(0, 0);
+//        }
     }
 }

@@ -47,34 +47,7 @@ public class SearchActivity extends BaseActivity {
     TextView mSearchTvCount;
     private String mMatternum;
 
-    /**
-     * 按键广播接收者 用于接受按键广播 触发扫描
-     */
-    private class MyKeyReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int keyCode = intent.getIntExtra("keyCode", 0);
-            // 为兼容早期版本机器
-            if (keyCode == 0) {
-                keyCode = intent.getIntExtra("keycode", 0);
-            }
-            boolean keyDown = intent.getBooleanExtra("keydown", false);
-            if (!keyDown) {
-                // 根据需要在对应的按键的键值中开启扫描,
-                switch (keyCode) {
-                    case KeyEvent.KEYCODE_F3:
-                    case KeyEvent.KEYCODE_F4:
-                        // uhf扫描
-                        runInventory();
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-    }
-
-    private MyKeyReceiver keyReceiver = new MyKeyReceiver();
+    private KeyReceiver keyReceiver = new KeyReceiver();
     /**
      * 盘存EPC的子线程
      */
@@ -85,7 +58,7 @@ public class SearchActivity extends BaseActivity {
                 if (isStart) {
 //                    LogUtils.e("RFID scan run !");
                     List<Reader.TAGINFO> list1;
-                    list1 = HomeActivity.mUhfrManager.tagInventoryByTimer((short) 50);
+                    list1 = MyApplication.mUhfrManager.tagInventoryByTimer((short) 50);
                     if (list1 != null && list1.size() > 0) {
                         for (Reader.TAGINFO tfs : list1) {
                             byte[] epcdata = tfs.EpcId;
@@ -102,7 +75,7 @@ public class SearchActivity extends BaseActivity {
                                 });
                                 getBoxInfo(epc);
                                 try {
-                                    Thread.sleep(50);
+                                    Thread.sleep(150);
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
@@ -135,20 +108,43 @@ public class SearchActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_search);
         ButterKnife.bind(this);
 
         mSearchRcvAdapter = new SearchRcvAdapter();
         mSearchRv.setLayoutManager(new LinearLayoutManager(SearchActivity.this));
         mSearchRv.setAdapter(mSearchRcvAdapter);
+        mQrOrRfid = 1;
+    }
+    @Override
+    public void setLayoutId() {
+        mLayoutId = R.layout.activity_search;
+    }
 
+    @Override
+    public void setTitle() {
+        mTitle = "物料查找";
+    }
+
+    @Override
+    public void onBackPressed() {
+        startActivity(new Intent(SearchActivity.this, EntryActivity.class));
+        finish();
+        super.onBackPressed();
+    }
+
+    @Override
+    protected void onDestroy() {
+        unregisterReceiver(keyReceiver);
+        isStart = false;
+        isRunning = false;
+        super.onDestroy();
     }
 
     @Override
     public void initUtils() {
         new Thread(inventoryTask).start();
         //注册按键广播接收者
-        keyReceiver = new MyKeyReceiver();
+        keyReceiver = new KeyReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction("android.rfid.FUN_KEY");
         filter.addAction("android.intent.action.FUN_KEY");
@@ -157,32 +153,37 @@ public class SearchActivity extends BaseActivity {
 
     @OnClick(R.id.matter_btn_scan)
     public void onViewClicked() {
-        mMatternum = mSearchEdtMatternum.getText().toString();
-        if (mMatternum.equals("")) {
-            ToastUtils.showShortToast("请输入物料号");
-            return;
-        }
         runInventory();
     }
 
     /**
      * 开始盘存EPC
      */
+    @Override
     public void runInventory() {
+        if (MyApplication.mUhfrManager == null){
+            ToastUtils.showShortToast("RFID异常，请退出应用重启");
+            return;
+        }
+        mMatternum = mSearchEdtMatternum.getText().toString();
+        if (mMatternum.equals("")) {
+            ToastUtils.showShortToast("请输入物料号");
+            return;
+        }
         LogUtils.e("runInventory !");
         if (keyControl) {
             keyControl = false;
             if (!isStart) {
                 // 屏蔽按钮
-                HomeActivity.mUhfrManager.setCancleInventoryFilter();
-                HomeActivity.mUhfrManager.setCancleFastMode();
+                MyApplication.mUhfrManager.setCancleInventoryFilter();
+                MyApplication.mUhfrManager.setCancleFastMode();
                 mMatterBtnScan.setText("停止扫描");
                 isStart = true;
             } else {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        HomeActivity.mUhfrManager.stopTagInventory();
+                        MyApplication.mUhfrManager.stopTagInventory();
                         try {
                             Thread.sleep(100);
                         } catch (Exception e) {
@@ -219,9 +220,9 @@ public class SearchActivity extends BaseActivity {
                         entryBoxInfo.setId(data.getString("id"));
                         entryBoxInfo.setTags(data.getString("tags"));
                         entryBoxInfo.setSign(data.getString("sign"));
-                        entryBoxInfo.setMattertype(data.getString("mattertype"));
-                        entryBoxInfo.setMattername(data.getString("mattername"));
-                        entryBoxInfo.setMatternum(data.getString("matternum"));
+                        entryBoxInfo.setMattertype(data.getString("mattertype") .equals("null")?"":data.getString("mattertype"));
+                        entryBoxInfo.setMattername(data.getString("mattername").equals("null")?"":data.getString("mattername"));
+                        entryBoxInfo.setMatternum(data.getString("matternum").equals("null")?"":data.getString("matternum"));
                         if (data.getString("matternum").equals(mMatternum)) {
                             entryBoxInfo.setIsMatch(true);
                             SoundUtil.play(2, 0);

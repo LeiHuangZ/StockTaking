@@ -2,6 +2,7 @@ package com.hand.stocktaking.activity;
 
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -9,6 +10,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -136,8 +138,8 @@ public class StorageActivity extends BaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_storage);
         ButterKnife.bind(this);
 
         initView();
@@ -145,6 +147,15 @@ public class StorageActivity extends BaseActivity {
         mQrOrRfid = 1;
 
         new Thread(inventoryTask).start();
+    }
+    @Override
+    public void setLayoutId() {
+        mLayoutId = R.layout.activity_storage;
+    }
+
+    @Override
+    public void setTitle() {
+        mTitle = "购买入库";
     }
 
     @Override
@@ -156,150 +167,173 @@ public class StorageActivity extends BaseActivity {
 
     @SuppressLint("InflateParams")
     private void initView() {
-        showProgressDialog(getString(R.string.getting_order_id));
-        getPreorderSum();
-        mStorageSpinnerOrderNumber.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                showProgressDialog(getString(R.string.getting_order_detail_id));
-                String preorderId = mPreorderList.get(position);
-                mBuyOrderId = preorderId;
-                // 获取预定订单详情
-                getPreorderDetail(preorderId);
-            }
+        try {
+            mStorageRcvAdapter = new StorageRcvAdapter();
+            mStorageRcv.setLayoutManager(new LinearLayoutManager(StorageActivity.this));
+            mStorageRcv.setAdapter(mStorageRcvAdapter);
+            showProgressDialog(getString(R.string.getting_order_id));
+            getPreorderSum();
+            mStorageSpinnerOrderNumber.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    showProgressDialog(getString(R.string.getting_order_detail_id));
+                    String preorderId = mPreorderList.get(position);
+                    mBuyOrderId = preorderId;
+                    // 获取预定订单详情
+                    getPreorderDetail(preorderId);
+                }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                ToastUtils.showShortToast("请选择预定订单号");
-            }
-        });
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                    ToastUtils.showShortToast("请选择预定订单号");
+                }
+            });
+        }catch (Exception e){
+            e.printStackTrace();
+        }
 
-        mStorageRcvAdapter = new StorageRcvAdapter();
-        mStorageRcv.setLayoutManager(new LinearLayoutManager(StorageActivity.this));
-        mStorageRcv.setAdapter(mStorageRcvAdapter);
     }
 
     private void getPreorderSum() {
-        mPreorderList.clear();
-        String companyId = mSPUtils.getString(SPUtils.KEY_COMPANY_ID);
-        mRetrofitRequestHelper.getPreorderRequest(companyId, new RetrofitRequestHelper.RetrofitRequestListener() {
-            @Override
-            public void requestSuccess(Response response) {
-                PreorderBean preorderBean = (PreorderBean) response.body();
-                List<PreorderBean.DataBean> dataBeanList = preorderBean != null ? preorderBean.getData() : new ArrayList<PreorderBean.DataBean>();
-                for (PreorderBean.DataBean dataBean :
-                        dataBeanList) {
-                    String buyorderid = dataBean.getBuyorderid();
-                    mPreorderList.add(buyorderid);
+        try {
+            // 重置箱子总数
+            mSum = 0;
+            mInfoList.clear();
+            mServerEpcList.clear();
+            mServerEpcInfoList.clear();
+            mEpcList.clear();
+            mRedundantEpcList.clear();
+            mStorageTvCount.setText(String.valueOf(mEpcList.size()));
+            mStorageTvResult.setText("");
+            mPreorderList.clear();
+            mStorageRcvAdapter.setList(mInfoList, false);
+            String companyId = mSPUtils.getString(SPUtils.KEY_COMPANY_ID);
+            mRetrofitRequestHelper.getPreorderRequest(companyId, new RetrofitRequestHelper.RetrofitRequestListener() {
+                @Override
+                public void requestSuccess(Response response) {
+                    PreorderBean preorderBean = (PreorderBean) response.body();
+                    List<PreorderBean.DataBean> dataBeanList = preorderBean != null ? preorderBean.getData() : new ArrayList<PreorderBean.DataBean>();
+                    for (PreorderBean.DataBean dataBean :
+                            dataBeanList) {
+                        String buyorderid = dataBean.getBuyorderid();
+                        mPreorderList.add(buyorderid);
+                    }
+                    ArrayAdapter<String> stringArrayAdapter = new ArrayAdapter<>(StorageActivity.this, R.layout.support_simple_spinner_dropdown_item, mPreorderList);
+                    mStorageSpinnerOrderNumber.setAdapter(stringArrayAdapter);
+                    hideProgressDialog();
                 }
-                ArrayAdapter<String> stringArrayAdapter = new ArrayAdapter<>(StorageActivity.this, R.layout.support_simple_spinner_dropdown_item, mPreorderList);
-                mStorageSpinnerOrderNumber.setAdapter(stringArrayAdapter);
-                hideProgressDialog();
-            }
 
-            @Override
-            public void requestFail(Throwable t) {
-                String error = t.getMessage();
-                String timeout = "timeout";
-                String noAddress = "Unable to resolve host";
-                LogUtils.e("loginRequest fail error = " + error);
-                if (error == null || timeout.equals(error) || error.contains(noAddress)) {
-                    ToastUtils.showShortToast(R.string.login_net_error);
+                @Override
+                public void requestFail(Throwable t) {
+                    if (t == null) {
+                        ToastUtils.showShortToast(R.string.login_net_error);
+                        return;
+                    }
+                    String error = t.getMessage();
+                    String timeout = "timeout";
+                    String noAddress = "Unable to resolve host";
+                    LogUtils.e("loginRequest fail error = " + error);
+                    if (error == null || timeout.equals(error) || error.contains(noAddress)) {
+                        ToastUtils.showShortToast(R.string.login_net_error);
+                    } else {
+                        ToastUtils.showShortToast("未找到可用订单");
+                    }
+                    hideProgressDialog();
                 }
-                hideProgressDialog();
-            }
-        });
+            });
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     private void getPreorderDetail(String preorderId) {
-        // 重置箱子总数
-        mSum = 0;
-        mInfoList.clear();
-        mServerEpcList.clear();
-        mServerEpcInfoList.clear();
-        mEpcList.clear();
-        mRedundantEpcList.clear();
-        mStorageTvCount.setText(String.valueOf(mEpcList.size()));
-        mStorageTvResult.setText("");
-        mRetrofitRequestHelper.getPreorderDetailsRequest(preorderId, new RetrofitRequestHelper.RetrofitRequestListener() {
-            @Override
-            public void requestSuccess(Response response) {
-                PreorderDetailsBean preorderDetailsBean = (PreorderDetailsBean) response.body();
-                PreorderDetailsBean.DataBean data = preorderDetailsBean != null ? preorderDetailsBean.getData() : null;
-                String buyCompany = data != null ? data.getBuycompanyname() : "无";
-                String pretime = data != null ? data.getPretime() : "无";
-                mProject1 = (String) data.getProject();
-                mSourcename = data.getSourcename();
-                mLoss_rate = (String) data.getLoss_rate();
-                mLifetime = (String) data.getLifetime();
-                mBuyCompany = buyCompany;
-                mPreTime = pretime;
-                mBuyTime = (String) (data != null ? data.getBuytime() : "无");
-                List<PreorderDetailsBean.DataBean.BoxnumBean> boxnumBeanList = data != null ? data.getBoxnum() : new ArrayList<PreorderDetailsBean.DataBean.BoxnumBean>();
+        try {
+            mRetrofitRequestHelper.getPreorderDetailsRequest(preorderId, new RetrofitRequestHelper.RetrofitRequestListener() {
+                @Override
+                public void requestSuccess(Response response) {
+                    PreorderDetailsBean preorderDetailsBean = (PreorderDetailsBean) response.body();
+                    PreorderDetailsBean.DataBean data = preorderDetailsBean != null ? preorderDetailsBean.getData() : null;
+                    String buyCompany = data != null ? data.getBuycompanyname() : "无";
+                    String pretime = data != null ? data.getPretime() : "无";
+                    mProject1 = (String) data.getProject();
+                    mSourcename = data.getSourcename();
+                    mLoss_rate = (String) data.getLoss_rate();
+                    mLifetime = (String) data.getLifetime();
+                    mBuyCompany = buyCompany;
+                    mPreTime = pretime;
+                    mBuyTime = (String) (data != null ? data.getBuytime() : "无");
+                    List<PreorderDetailsBean.DataBean.BoxnumBean> boxnumBeanList = data != null ? data.getBoxnum() : new ArrayList<PreorderDetailsBean.DataBean.BoxnumBean>();
 
-                for (int i = 0; i < boxnumBeanList.size(); i++) {
-                    PreorderDetailsBean.DataBean.BoxnumBean boxnumBean = boxnumBeanList.get(i);
-                    String boxNumStr = boxnumBean.getBox_num();
-                    int boxNum = Integer.valueOf(boxNumStr);
-                    mSum += boxNum;
-                    String boxPrice = boxnumBean.getBox_price();
-                    String boxType = boxnumBean.getBox_type();
-                    List<String> tags = boxnumBean.getTags();
-                    for (String tag :
-                            tags) {
-                        StorageBoxInfo info = new StorageBoxInfo();
-                        info.setRfid(tag);
-                        if (mServerEpcList.contains(tag)) {
-                            List<ServerEpcInfo> serverEpcInfoList = new ArrayList<>();
-                            int num = 1;
-                            for (int j = 0; j < mServerEpcInfoList.size(); j++) {
-                                ServerEpcInfo epcInfo = serverEpcInfoList.get(j);
-                                if (tag.equals(mServerEpcInfoList.get(j).getEpc())) {
-                                    num = mServerEpcInfoList.get(j).getNum() + 1;
+                    for (int i = 0; i < boxnumBeanList.size(); i++) {
+                        PreorderDetailsBean.DataBean.BoxnumBean boxnumBean = boxnumBeanList.get(i);
+                        String boxNumStr = boxnumBean.getBox_num();
+                        int boxNum = Integer.valueOf(boxNumStr);
+                        mSum += boxNum;
+                        String boxPrice = boxnumBean.getBox_price();
+                        String boxType = boxnumBean.getBox_sign();
+                        List<String> tags = boxnumBean.getTags();
+                        for (String tag :
+                                tags) {
+                            StorageBoxInfo info = new StorageBoxInfo();
+                            info.setRfid(tag);
+                            if (mServerEpcList.contains(tag)) {
+                                List<ServerEpcInfo> serverEpcInfoList = new ArrayList<>();
+                                int num = 1;
+                                for (int j = 0; j < mServerEpcInfoList.size(); j++) {
+                                    ServerEpcInfo epcInfo = serverEpcInfoList.get(j);
+                                    if (tag.equals(mServerEpcInfoList.get(j).getEpc())) {
+                                        num = mServerEpcInfoList.get(j).getNum() + 1;
+                                    }
+                                    epcInfo.setNum(num);
+                                    serverEpcInfoList.add(epcInfo);
                                 }
-                                epcInfo.setNum(num);
-                                serverEpcInfoList.add(epcInfo);
+                                mServerEpcInfoList.clear();
+                                mServerEpcInfoList.addAll(serverEpcInfoList);
+                                info.setBoxNum(num + "");
+                            } else {
+                                ServerEpcInfo epcInfo = new ServerEpcInfo();
+                                epcInfo.setEpc(tag);
+                                epcInfo.setNum(1);
+                                mServerEpcInfoList.add(epcInfo);
+                                info.setBoxNum("1");
+                                mServerEpcList.add(tag);
                             }
-                            mServerEpcInfoList.clear();
-                            mServerEpcInfoList.addAll(serverEpcInfoList);
-                            info.setBoxNum(num + "");
-                        } else {
-                            ServerEpcInfo epcInfo = new ServerEpcInfo();
-                            epcInfo.setEpc(tag);
-                            epcInfo.setNum(1);
-                            mServerEpcInfoList.add(epcInfo);
-                            info.setBoxNum("1");
-                            mServerEpcList.add(tag);
+                            info.setBuyCompany(buyCompany);
+                            info.setBoxPrice(boxPrice);
+                            info.setBoxType(boxType);
+                            info.setPreTime(pretime);
+                            mInfoList.add(info);
                         }
-                        info.setBuyCompany(buyCompany);
-                        info.setBoxPrice(boxPrice);
-                        info.setBoxType(boxType);
-                        info.setPreTime(pretime);
-                        mInfoList.add(info);
                     }
+                    LogUtils.e("sum = " + mSum);
+                    mStorageTvSum.setText(String.valueOf(mSum));
+                    mStorageRcvAdapter.setList(mInfoList, false);
+                    hideProgressDialog();
                 }
-                LogUtils.e("sum = " + mSum);
-                mStorageTvSum.setText(String.valueOf(mSum));
-                mStorageRcvAdapter.setList(mInfoList, false);
-                hideProgressDialog();
-            }
 
-            @Override
-            public void requestFail(Throwable t) {
-                String error = t.getMessage();
-                String timeout = "timeout";
-                String noAddress = "Unable to resolve host";
-                LogUtils.e("loginRequest fail error = " + error);
-                if (timeout.equals(error) || error.contains(noAddress)) {
-                    ToastUtils.showShortToast(R.string.login_net_error);
-                } else {
-                    ToastUtils.showShortToast(R.string.get_details_erro);
+                @Override
+                public void requestFail(Throwable t) {
+                    if (t == null){
+                        ToastUtils.showShortToast(R.string.login_net_error);
+                        return;
+                    }
+                    String error = t.getMessage();
+                    String timeout = "timeout";
+                    String noAddress = "Unable to resolve host";
+                    LogUtils.e("loginRequest fail error = " + error);
+                    if (timeout.equals(error) || error.contains(noAddress)) {
+                        ToastUtils.showShortToast(R.string.login_net_error);
+                    } else {
+                        ToastUtils.showShortToast(R.string.get_details_erro);
+                    }
+                    mStorageTvSum.setText(String.valueOf(mSum));
+                    mStorageRcvAdapter.setList(mInfoList, false);
+                    hideProgressDialog();
                 }
-                mStorageTvSum.setText(String.valueOf(mSum));
-                mStorageRcvAdapter.setList(mInfoList, false);
-                hideProgressDialog();
-            }
-        });
+            });
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -343,7 +377,12 @@ public class StorageActivity extends BaseActivity {
                 storageActivity.isRecord = true;
             }else if (msg.what == WHAT_RECORD_FAIL){
                 storageActivity.hideProgressDialog();
-                ToastUtils.showShortToast("记录订单信息失败，请检查网络及输入信息后重试");
+                String obj = (String) msg.obj;
+                if (obj == null){
+                    ToastUtils.showShortToast("订单信息记录失败，请检查网络及输入信息后重试");
+                }else {
+                    ToastUtils.showShortToast("订单信息记录失败，错误信息：" + obj);
+                }
             }
             else if (msg.what == WHAT_ENSURE_FAIL){
                 storageActivity.hideProgressDialog();
@@ -408,7 +447,7 @@ public class StorageActivity extends BaseActivity {
                 if (isStart) {
                     LogUtils.e("RFID scan run !");
                     List<Reader.TAGINFO> list1;
-                    list1 = HomeActivity.mUhfrManager.tagInventoryByTimer((short) 50);
+                    list1 = MyApplication.mUhfrManager.tagInventoryByTimer((short) 50);
                     if (list1 != null && list1.size() > 0) {
                         for (Reader.TAGINFO tfs : list1) {
                             byte[] epcdata = tfs.EpcId;
@@ -443,7 +482,12 @@ public class StorageActivity extends BaseActivity {
         }
     };
 
+    @Override
     public void runInventory() {
+        if (MyApplication.mUhfrManager == null){
+            ToastUtils.showShortToast("RFID异常，请退出应用重启");
+            return;
+        }
         LogUtils.e("runInventory !");
         if (keyControl) {
             keyControl = false;
@@ -451,23 +495,22 @@ public class StorageActivity extends BaseActivity {
                 // 屏蔽按钮
                 mStorageBtnEnsure.setClickable(false);
                 mStorageBtnRecord.setClickable(false);
-                HomeActivity.mUhfrManager.setCancleInventoryFilter();
-                HomeActivity.mUhfrManager.setCancleFastMode();
+                MyApplication.mUhfrManager.setCancleInventoryFilter();
+                MyApplication.mUhfrManager.setCancleFastMode();
                 mStorageBtnScan.setText(getResources().getString(R.string.storage_btn_scan_stop));
                 isStart = true;
             } else {
+                isStart = false;
                 showProgressDialog(getString(R.string.comparing_order_info));
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        HomeActivity.mUhfrManager.stopTagInventory();
+                        MyApplication.mUhfrManager.stopTagInventory();
                         try {
                             Thread.sleep(100);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                        isStart = false;
-
                         // 比对扫描到的标签和从服务器获取的标签数
                         compareTags();
                     }
@@ -611,17 +654,50 @@ public class StorageActivity extends BaseActivity {
                                                     String message = jsonObject.getString("message");
                                                     LogUtils.e("ensure, code = " + code);
                                                     LogUtils.e("ensure, message = " + message);
+                                                    JSONArray jsonArray = jsonObject.getJSONArray("data");
                                                     if (code.equals("200")){
                                                         mHandler.sendEmptyMessage(WHAT_ENSURE_SUCCESS);
                                                     }else {
-                                                        JSONArray jsonArray = jsonObject.getJSONArray("data");
-                                                        int length = jsonArray.length();
-                                                        LogUtils.e("length = " + length);
-                                                        Object o = jsonArray.get(0);
-                                                        LogUtils.e("object = " + o);
+                                                        String erro = "";
+                                                        if (message.equals("preOrdersub.orderid-error")){
+                                                            erro = "订单号不存在";
+                                                        }else if (message.equals("preOrdersub.tagslist-error")){
+                                                            erro = "标签数组不存在";
+                                                        }else if (message.equals("preOrdersub.type-error")){
+                                                            erro = "订单类型不存在";
+                                                        }else if (message.equals("preOrdersub.userid-error")){
+                                                            erro = "用户id不存在";
+                                                        }else if (message.equals("preOrdersub.taglist.unique-error")){
+                                                            erro = "有重复标签";
+                                                        }else if (message.equals("preOrdersub.orderinfo-error")){
+                                                            erro = "没有这个订单";
+                                                        }else if (message.equals("preOrdersub.tags-error")){
+                                                            erro = "后台未录入标签";
+                                                        }else if (message.equals("preOrdersub.tag.type-error")){
+                                                            erro = "订单类型与标签数组之间验证错误";
+                                                        }else if (message.equals("preOrdersub.type.num-error")){
+                                                            erro = "订单类型错误";
+                                                        }else if (message.equals("preOrdersub-error")){
+                                                            erro = "订单提交失败";
+                                                        }else if (message.equals("preOrdersub.tag.buy-error")){
+                                                            erro = "该标签已被购买：";
+                                                            int length = jsonArray.length();
+                                                            LogUtils.e("length = " + length);
+                                                            for (int i = 0; i < length; i++) {
+                                                                erro = erro.concat((String) jsonArray.get(i));
+                                                            }
+                                                        }else if (message.equals("preOrdersub.tag.prebuy-error")){
+                                                            erro = "该标签已被预订";
+                                                            int length = jsonArray.length();
+                                                            LogUtils.e("length = " + length);
+                                                            for (int i = 0; i < length; i++) {
+                                                                erro = erro.concat((String) jsonArray.get(i));
+                                                            }
+                                                        }
                                                         Message message1 = new Message();
-                                                        message1.obj = message;
-                                                        mHandler.sendEmptyMessage(WHAT_ENSURE_FAIL);
+                                                        message1.obj = erro;
+                                                        message1.what = WHAT_ENSURE_FAIL;
+                                                        mHandler.sendMessage(message1);
                                                     }
                                                 } catch (Exception e) {
                                                     e.printStackTrace();
@@ -631,6 +707,10 @@ public class StorageActivity extends BaseActivity {
 
                                             @Override
                                             public void requestFail(Throwable t) {
+                                                if (t == null){
+                                                    mHandler.sendEmptyMessage(WHAT_ENSURE_FAIL);
+                                                    return;
+                                                }
                                                 LogUtils.e(t.getMessage());
                                                 mHandler.sendEmptyMessage(WHAT_ENSURE_FAIL);
                                             }
@@ -675,12 +755,46 @@ public class StorageActivity extends BaseActivity {
                                     }else {
                                         JSONArray jsonArray = jsonObject.getJSONArray("data");
                                         String message = jsonObject.getString("message");
-                                        LogUtils.e("确认订单失败，原因：" + message);
-                                        int length = jsonArray.length();
-                                        LogUtils.e("length = " + length);
-                                        Object o = jsonArray.get(0);
-                                        LogUtils.e("object = " + o);
-                                        mHandler.sendEmptyMessage(WHAT_ENSURE_FAIL);
+                                        String erro = "";
+                                        if (message.equals("preOrdersub.orderid-error")){
+                                            erro = "订单号不存在";
+                                        }else if (message.equals("preOrdersub.tagslist-error")){
+                                            erro = "标签数组不存在";
+                                        }else if (message.equals("preOrdersub.type-error")){
+                                            erro = "订单类型不存在";
+                                        }else if (message.equals("preOrdersub.userid-error")){
+                                            erro = "用户id不存在";
+                                        }else if (message.equals("preOrdersub.taglist.unique-error")){
+                                            erro = "有重复标签";
+                                        }else if (message.equals("preOrdersub.orderinfo-error")){
+                                            erro = "没有这个订单";
+                                        }else if (message.equals("preOrdersub.tags-error")){
+                                            erro = "后台未录入标签";
+                                        }else if (message.equals("preOrdersub.tag.type-error")){
+                                            erro = "订单类型与标签数组之间验证错误";
+                                        }else if (message.equals("preOrdersub.type.num-error")){
+                                            erro = "订单类型错误";
+                                        }else if (message.equals("preOrdersub-error")){
+                                            erro = "订单提交失败";
+                                        }else if (message.equals("preOrdersub.tag.buy-error")){
+                                            erro = "该标签已被购买：";
+                                            int length = jsonArray.length();
+                                            LogUtils.e("length = " + length);
+                                            for (int i = 0; i < length; i++) {
+                                                erro = erro.concat((String) jsonArray.get(i));
+                                            }
+                                        }else if (message.equals("preOrdersub.tag.prebuy-error")){
+                                            erro = "该标签已被预订";
+                                            int length = jsonArray.length();
+                                            LogUtils.e("length = " + length);
+                                            for (int i = 0; i < length; i++) {
+                                                erro = erro.concat((String) jsonArray.get(i));
+                                            }
+                                        }
+                                        Message message1 = new Message();
+                                        message1.obj = erro;
+                                        message1.what = WHAT_ENSURE_FAIL;
+                                        mHandler.sendMessage(message1);
                                     }
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -691,6 +805,7 @@ public class StorageActivity extends BaseActivity {
                             @Override
                             public void requestFail(Throwable t) {
                                 if (t == null){
+                                    mHandler.sendEmptyMessage(WHAT_ENSURE_FAIL);
                                     return;
                                 }
                                 LogUtils.e(t.getMessage());
@@ -729,9 +844,34 @@ public class StorageActivity extends BaseActivity {
                             if ("200".equals(code)){
                                 mHandler.sendEmptyMessage(WHAT_RECORD_SUCCESS);
                             }else {
-                                String error = jsonObject.getString("message");
+                                String str = jsonObject.getString("message");
+                                String error = "";
+                                if (str.equals("editOrderinfo.buyorderid-error")){
+                                    error = "购买订单号不存在";
+                                }else if (str.equals("editOrderinfo.project-error")){
+                                    error = "所为项目不存在";
+                                }else if (str.equals("editOrderinfo.sourcename-error")){
+                                    error = "供应商不存在";
+                                }else if (str.equals("editOrderinfo.loss_rate-error")){
+                                    error = "损耗率不存在";
+                                }else if (str.equals("editOrderinfo.lifetime-error")){
+                                    error = "使用寿命不存在";
+                                }else if (str.equals("editOrderinfo.company_id-error")){
+                                    error = "公司id不存在";
+                                }else if (str.equals("editOrderinfo.user_id-error")){
+                                    error = "用户id不存在";
+                                }else if (str.equals("editOrderinfo.loss_rate.type-error")){
+                                    error = "损耗率错误（范围0-100）";
+                                }else if (str.equals("editOrderinfo.lifetime.type-error")){
+                                    error = "使用寿命错误";
+                                }else if (str.equals("editOrderinfo-error")){
+                                    error = "记录信息失败";
+                                }
                                 LogUtils.e("记录订单信息失败，原因：" + error);
-                                mHandler.sendEmptyMessage(WHAT_RECORD_FAIL);
+                                Message message = new Message();
+                                message.what = WHAT_RECORD_FAIL;
+                                message.obj = error;
+                                mHandler.sendMessage(message);
                             }
                         } catch (IOException e) {
                             e.printStackTrace();

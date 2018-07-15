@@ -4,96 +4,113 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/colorBlue"
+    android:fitsSystemWindows="true"
     android:orientation="vertical"
     tools:context=".activity.EntryActivity">
 
-    <LinearLayout
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/entry_btn_scan"
-            android:layout_width="0dp"
-            android:layout_height="@dimen/storage_btn_height"
-            android:layout_marginStart="10dp"
-            android:layout_weight="1"
-            android:background="@drawable/btn_bg"
-            android:orientation="horizontal"
-            android:text="@string/storage_btn_scan"
-            android:textColor="@color/colorWhite"
-            android:textSize="@dimen/storage_text_size" />
-
-        <Button
-            android:id="@+id/entry_btn_entry"
-            android:layout_width="0dp"
-            android:layout_height="@dimen/storage_btn_height"
-            android:layout_marginStart="10dp"
-            android:layout_weight="1"
-            android:background="@drawable/btn_bg"
-            android:orientation="horizontal"
-            android:text="物料录入"
-            android:textColor="@color/colorWhite"
-            android:textSize="@dimen/storage_text_size" />
-
-        <Button
-            android:id="@+id/entry_btn_search"
-            android:layout_width="0dp"
-            android:layout_height="@dimen/storage_btn_height"
-            android:layout_marginEnd="10dp"
-            android:layout_marginStart="10dp"
-            android:layout_weight="1"
-            android:background="@drawable/btn_bg"
-            android:clickable="false"
-            android:orientation="horizontal"
-            android:text="物料查找"
-            android:textColor="@color/colorWhite"
-            android:textSize="@dimen/storage_text_size" />
-
-    </LinearLayout>
+        android:background="@color/colorBlue"
+        app:titleTextColor="@color/colorWhite" />
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="10dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="箱子总数："
-            android:textColor="@color/colorText" />
-
-        <TextView
-            android:id="@+id/entry_tv_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="5dp"
-            android:textColor="@color/colorText" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:text="扫描标签数："
-            android:textColor="@color/colorText" />
-
-        <TextView
-            android:id="@+id/entry_tv_sum"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="5dp"
-            android:textColor="@color/colorText" />
-
-
-
-    </LinearLayout>
-
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/entry_rv"
         android:layout_width="match_parent"
-        android:layout_weight="1"
         android:layout_height="match_parent"
-        android:layout_marginTop="10dp"/>
+        android:background="@android:color/white"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/entry_btn_scan"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/storage_btn_height"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:background="@drawable/btn_bg"
+                android:orientation="horizontal"
+                android:text="@string/storage_btn_scan"
+                android:textColor="@color/colorWhite"
+                android:textSize="@dimen/storage_text_size" />
+
+            <Button
+                android:id="@+id/entry_btn_entry"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/storage_btn_height"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:background="@drawable/btn_bg"
+                android:orientation="horizontal"
+                android:text="物料录入"
+                android:textColor="@color/colorWhite"
+                android:textSize="@dimen/storage_text_size" />
+
+            <Button
+                android:id="@+id/entry_btn_search"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/storage_btn_height"
+                android:layout_marginEnd="10dp"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:background="@drawable/btn_bg"
+                android:clickable="false"
+                android:orientation="horizontal"
+                android:text="物料查找"
+                android:textColor="@color/colorWhite"
+                android:textSize="@dimen/storage_text_size" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="箱子总数："
+                android:textColor="@color/colorText" />
+
+            <TextView
+                android:id="@+id/entry_tv_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textColor="@color/colorText" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:text="扫描标签数："
+                android:textColor="@color/colorText" />
+
+            <TextView
+                android:id="@+id/entry_tv_sum"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textColor="@color/colorText" />
+
+
+        </LinearLayout>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/entry_rv"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="10dp"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+
 </LinearLayout>

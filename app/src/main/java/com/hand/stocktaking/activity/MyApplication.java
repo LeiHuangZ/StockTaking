@@ -1,13 +1,13 @@
 package com.hand.stocktaking.activity;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.support.annotation.NonNull;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.hand.stocktaking.R;
 import com.hand.stocktaking.utils.SPUtils;
 import com.hand.stocktaking.utils.ToastUtils;
@@ -22,7 +22,8 @@ import butterknife.OnClick;
 /**
  * @author huang
  */
-public class HomeActivity extends BaseActivity {
+public class MyApplication extends BaseActivity {
+    public static UHFRManager mUhfrManager;
 
     @BindView(R.id.home_btn_storage)
     Button mHomeBtnStorage;
@@ -43,12 +44,10 @@ public class HomeActivity extends BaseActivity {
     private SPUtils mSPUtils;
     private String mUserType;
     private int mUserTypeInt;
-    public static UHFRManager mUhfrManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home);
         ButterKnife.bind(this);
 
         initUtils();
@@ -56,35 +55,59 @@ public class HomeActivity extends BaseActivity {
     }
 
     @Override
-    public void onBackPressed() {
-        startActivity(new Intent(HomeActivity.this, LoginActivity.class));
-        super.onBackPressed();
-    }
-
-    @Override
     protected void onDestroy() {
-        if (mUhfrManager != null) {
-            mUhfrManager.close();
-            mUhfrManager = null;
-        }
+        MyApplication.close();
         super.onDestroy();
     }
 
+    @Override
+    public void setLayoutId() {
+        mLayoutId = R.layout.activity_home;
+    }
+
+    @Override
+    public void setTitle() {
+        mTitle = "主界面";
+    }
+
+    @Override
+    public void onBackPressed() {
+        new MaterialDialog.Builder(MyApplication.this)
+                .content("是否返回登陆界面")
+                .positiveText("确认")
+                .negativeText("取消")
+                .onPositive(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        finish();
+                    }
+                })
+                .build().show();
+    }
+
+    @Override
     public void initUtils() {
-        Utils.init(HomeActivity.this);
-        mSPUtils = new SPUtils(SPUtils.USER_FLAG);
-        mUserType = mSPUtils.getString(SPUtils.KEY_USER_TYPE);
-        mUserTypeInt = Integer.valueOf(mUserType);
-        mUhfrManager = UHFRManager.getIntance(HomeActivity.this);
+        mUhfrManager = UHFRManager.getIntance(this);
+        Utils.init(this);
         if(mUhfrManager!=null){
             mUhfrManager.setRegion(Reader.Region_Conf.valueOf(1));
-            mUhfrManager.setPower(25, 25);
+            mUhfrManager.setPower(28, 28);
             ToastUtils.showShortToast(R.string.init_rfid_success);
         }else {
             ToastUtils.showShortToast(R.string.init_rfid_fail);
         }
+        Utils.init(MyApplication.this);
+        mSPUtils = new SPUtils(SPUtils.USER_FLAG);
+        mUserType = mSPUtils.getString(SPUtils.KEY_USER_TYPE);
+        mUserTypeInt = Integer.valueOf(mUserType);
     }
 
+    public static void close(){
+        if (mUhfrManager != null) {
+            mUhfrManager.close();
+            mUhfrManager = null;
+        }
+    }
     private void initView() {
         switch (mUserTypeInt) {
             case 0:
@@ -126,25 +149,25 @@ public class HomeActivity extends BaseActivity {
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.home_btn_storage:
-                startActivity(new Intent(HomeActivity.this, StorageActivity.class));
+                startActivity(new Intent(MyApplication.this, StorageActivity.class));
                 break;
             case R.id.home_btn_delivery:
-                startActivity(new Intent(HomeActivity.this, OutboundActivity.class));
+                startActivity(new Intent(MyApplication.this, OutboundActivity.class));
                 break;
             case R.id.home_btn_doorkeeper:
-                startActivity(new Intent(HomeActivity.this, DoorActivity.class));
+                startActivity(new Intent(MyApplication.this, DoorActivity.class));
                 break;
             case R.id.home_btn_harvest:
-                startActivity(new Intent(HomeActivity.this, ReceiveActivity.class));
+                startActivity(new Intent(MyApplication.this, ReceiveActivity.class));
                 break;
             case R.id.home_btn_inventory:
-                startActivity(new Intent(HomeActivity.this, EntryActivity.class));
+                startActivity(new Intent(MyApplication.this, EntryActivity.class));
                 break;
             case R.id.home_btn_clean:
-                startActivity(new Intent(HomeActivity.this, CleanActivity.class));
+                startActivity(new Intent(MyApplication.this, CleanActivity.class));
                 break;
             case R.id.home_btn_clean_check:
-                startActivity(new Intent(HomeActivity.this, CleanEnsuerActivity.class));
+                startActivity(new Intent(MyApplication.this, CleanEnsuerActivity.class));
                 break;
             case R.id.home_btn_sap:
                 break;

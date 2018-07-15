@@ -10,6 +10,7 @@ import android.os.Message;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.ArrayMap;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.AdapterView;
@@ -105,11 +106,19 @@ public class DoorActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_door);
         ButterKnife.bind(this);
 
         initView();
         new Thread(inventoryTask).start();
+    }
+    @Override
+    public void setLayoutId() {
+        mLayoutId = R.layout.activity_door;
+    }
+
+    @Override
+    public void setTitle() {
+        mTitle = "门卫检查";
     }
 
     @Override
@@ -180,45 +189,45 @@ public class DoorActivity extends BaseActivity {
      */
     private List<String> mRedundantEpcList = new ArrayList<>();
 
+    @Override
     public void runInventory() {
         LogUtils.e("runInventory !");
+        if (MyApplication.mUhfrManager == null){
+            ToastUtils.showShortToast("RFID异常，请退出应用重启");
+            return;
+        }
         if (keyControl) {
             keyControl = false;
             if (!isStart) {
-                //如果已经确认过
-                if (isFinishInventory) {
-                    return;
-                }
                 // 屏蔽按钮
-                HomeActivity.mUhfrManager.setCancleInventoryFilter();
-                HomeActivity.mUhfrManager.setCancleFastMode();
+                MyApplication.mUhfrManager.setCancleInventoryFilter();
+                MyApplication.mUhfrManager.setCancleFastMode();
                 mDoorBtnInventory.setText("停止扫描");
                 isStart = true;
             } else {
-                if (isFinishInventory) {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            HomeActivity.mUhfrManager.stopTagInventory();
-                            try {
-                                Thread.sleep(100);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            isStart = false;
-
-                            // 比对标签信息
-                            compareTags();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        MyApplication.mUhfrManager.stopTagInventory();
+                        try {
+                            Thread.sleep(100);
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    }).start();
-                    mDoorBtnInventory.setText("点击扫描");
-                }
+                        isStart = false;
+
+                        // 比对标签信息
+                        compareTags();
+                    }
+                }).start();
+                mDoorBtnInventory.setText("点击扫描");
             }
             keyControl = true;
         }
     }
 
     boolean isfirst = true;
+
     private void compareTags() {
         runOnUiThread(new Runnable() {
             @Override
@@ -242,48 +251,81 @@ public class DoorActivity extends BaseActivity {
                 mDoorTvResult.setText("确认完毕，扫描通过！");
             }
         });
-            mRetrofitRequestHelper.outOrderRequest(mRedundantEpcList, new RetrofitRequestHelper.RetrofitRequestListener() {
-                @Override
-                public void requestSuccess(Response response) {
-                    ResponseBody responseBody = (ResponseBody) response.body();
-                    try {
-                        String string = responseBody.string();
-                        JSONObject jsonObject = new JSONObject(string);
-                        LogUtils.e("code = " + jsonObject.getString("code"));
-                        if ("200".equals(jsonObject.getString("code"))) {
-                            JSONArray data = jsonObject.getJSONArray("data");
-                            LogUtils.e("data.length = " + data.length());
-                            for (int i = 0; i < data.length(); i++) {
-                                JSONObject jsonObject1 = data.getJSONObject(i);
-                                String sign = jsonObject1.getString("sign");
-                                String tags = jsonObject1.getString("tags");
+        mRetrofitRequestHelper.outOrderRequest(mRedundantEpcList, new RetrofitRequestHelper.RetrofitRequestListener() {
+            @Override
+            public void requestSuccess(Response response) {
+                ResponseBody responseBody = (ResponseBody) response.body();
+                try {
+                    String string = responseBody.string();
+                    JSONObject jsonObject = new JSONObject(string);
+                    LogUtils.e("code = " + jsonObject.getString("code"));
+                    if ("200".equals(jsonObject.getString("code"))) {
+                        JSONArray data = jsonObject.getJSONArray("data");
+                        LogUtils.e("data.length = " + data.length());
+                        List<String> tempEpcList = new ArrayList<>();
+                        for (int i = 0; i < data.length(); i++) {
+                            JSONObject jsonObject1 = data.getJSONObject(i);
+                            String sign = jsonObject1.getString("sign");
+                            String tags = jsonObject1.getString("tags");
+                            if (isfirst) {
+                                mDoorTvResult.setText("扫描不通过，多出\n");
+                                isfirst = false;
+                            }
+                            mDoorTvResult.append("型号");
+                            mDoorTvResult.append(sign);
+                            mDoorTvResult.append("，RF标签：");
+                            mDoorTvResult.append(tags);
+                            mDoorTvResult.append("箱子\n");
+                            DoorBoxInfo doorBoxInfo = new DoorBoxInfo();
+                            doorBoxInfo.setBoxType(sign);
+                            doorBoxInfo.setRedundant(true);
+                            doorBoxInfo.setRfid(tags);
+                            mInfoList.add(doorBoxInfo);
+                            mDoorRcvAdapter.setList(mInfoList);
+                            tempEpcList.add(tags);
+                        }
+                        for (String epc:mRedundantEpcList) {
+                            boolean isReachable = true;
+                            for (String epc2:tempEpcList) {
+                                if (epc.equals(epc2)){
+                                    isReachable = false;
+                                }
+                            }
+                            if (isReachable){
                                 if (isfirst) {
                                     mDoorTvResult.setText("扫描不通过，多出\n");
                                     isfirst = false;
                                 }
-                                mDoorTvResult.append("型号");
-                                mDoorTvResult.append(sign);
-                                mDoorTvResult.append("，RF标签：");
-                                mDoorTvResult.append(tags);
-                                mDoorTvResult.append("箱子\n");
-                                DoorBoxInfo doorBoxInfo = new DoorBoxInfo();
-                                doorBoxInfo.setBoxType(sign);
-                                doorBoxInfo.setRedundant(true);
-                                doorBoxInfo.setRfid(tags);
-                                mInfoList.add(doorBoxInfo);
-                                mDoorRcvAdapter.setList(mInfoList);
-                                SoundUtil.play(2, 0);
+                                mDoorTvResult.append("未知标签：");
+                                mDoorTvResult.append(epc);
+                                mDoorTvResult.append("\n");
                             }
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        SoundUtil.pasue();
+                        SoundUtil.play(2, 0);
+                    }else {
+                        if (mRedundantEpcList.size() != 0){
+                            for(String epc:mRedundantEpcList){
+                                if (isfirst) {
+                                    mDoorTvResult.setText("扫描不通过，多出\n");
+                                    isfirst = false;
+                                }
+                                mDoorTvResult.append("未知标签：");
+                                mDoorTvResult.append(epc + "\n");
+                            }
+                            SoundUtil.pasue();
+                            SoundUtil.play(2, 0);
+                        }
                     }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
+            }
 
-                @Override
-                public void requestFail(Throwable t) {
-                }
-            });
+            @Override
+            public void requestFail(Throwable t) {
+            }
+        });
 
         isfirst = true;
         new Thread(new Runnable() {
@@ -314,7 +356,7 @@ public class DoorActivity extends BaseActivity {
                 if (isStart) {
                     LogUtils.e("RFID scan run !");
                     List<Reader.TAGINFO> list1;
-                    list1 = HomeActivity.mUhfrManager.tagInventoryByTimer((short) 50);
+                    list1 = MyApplication.mUhfrManager.tagInventoryByTimer((short) 50);
                     if (list1 != null && list1.size() > 0) {
                         for (Reader.TAGINFO tfs : list1) {
                             byte[] epcdata = tfs.EpcId;
@@ -353,6 +395,7 @@ public class DoorActivity extends BaseActivity {
         mDoorRv.setAdapter(mDoorRcvAdapter);
     }
 
+    @Override
     public void initUtils() {
         try {
             scanThread = new ScanThread(mHandler);
@@ -391,7 +434,12 @@ public class DoorActivity extends BaseActivity {
 
             @Override
             public void requestFail(Throwable t) {
-                ToastUtils.showShortToast("获取失败，请确认网络连接是否正常及二维码是否有效");
+                Log.e("huang", "requestFail, t = " + t.getMessage());
+                if (t.getMessage().contains("Expected BEGIN_OBJECT but was BEGIN_ARRAY")){
+                    ToastUtils.showShortToast("获取失败，请确认二维码是否有效");
+                }else {
+                    ToastUtils.showShortToast("获取失败，请确认网络连接是否正常");
+                }
                 hideProgressDialog();
             }
         });
@@ -453,7 +501,7 @@ public class DoorActivity extends BaseActivity {
             mOutTvResult.append(String.valueOf(entry.getValue()));
             mOutTvResult.append("个\n");
         }
-        mDoorBtnScan.setVisibility(View.INVISIBLE);
+        mDoorBtnScan.setVisibility(View.GONE);
         mDoorLlSecond.setVisibility(View.VISIBLE);
     }
 

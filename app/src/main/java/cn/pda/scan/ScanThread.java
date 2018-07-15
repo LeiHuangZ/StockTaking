@@ -44,7 +44,6 @@ public class ScanThread extends Thread {
 		try {
 			Thread.sleep(500);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		/** clear useless data **/
@@ -125,7 +124,6 @@ public class ScanThread extends Thread {
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}

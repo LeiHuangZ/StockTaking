@@ -2,7 +2,11 @@ package com.hand.stocktaking.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -12,6 +16,7 @@ import com.hand.stocktaking.retrofit.RetrofitRequestHelper;
 import com.hand.stocktaking.retrofit.UserBean;
 import com.hand.stocktaking.utils.LogUtils;
 import com.hand.stocktaking.utils.SPUtils;
+import com.hand.stocktaking.utils.SoundUtil;
 import com.hand.stocktaking.utils.StringUtils;
 import com.hand.stocktaking.utils.ToastUtils;
 import com.hand.stocktaking.utils.Utils;
@@ -26,8 +31,17 @@ import retrofit2.Response;
 /**
  * @author huang
  */
-public class LoginActivity extends BaseActivity {
+public class LoginActivity extends AppCompatActivity {
 
+    public MaterialDialog mLoginDialog;
+    /**
+     * 登陆进度条
+     */
+    public MaterialDialog.Builder mLoginDialogBuilder;
+    /**
+     * SP存储工具
+     */
+    public SPUtils mSPUtils;
     @BindView(R.id.login_edt_username)
     EditText mLoginEdtUsername;
     @BindView(R.id.login_edt_password)
@@ -52,19 +66,47 @@ public class LoginActivity extends BaseActivity {
     private static String failCode = "400";
     private static String successCode = "200";
 
+    public RetrofitRequestHelper mRetrofitRequestHelper;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
-
+        Utils.init(this);
+        // 日志打印工具
+        LogUtils.init(true, false, 'e', "Huang");
+        // SP存储工具
+        mSPUtils = new SPUtils(SPUtils.USER_FLAG);
+        mLoginDialogBuilder = new MaterialDialog.Builder(this)
+                .progress(true, 100)
+                .cancelable(false);
+        // 网络请求
+        mRetrofitRequestHelper = RetrofitRequestHelper.getRetrofitRequestHelper();
+        SoundUtil.initSoundPool(this);
+        // 保持屏幕常亮
+        //保持屏幕常亮
+        Window window = this.getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         initView();
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ActionBar supportActionBar = getSupportActionBar();
+        if (supportActionBar != null){
+            supportActionBar.setTitle("登陆界面");
+        }
     }
 
     private void initView() {
         // 获取上一次登陆用户名填充编辑框
         String lastUsername = mSPUtils.getString(SPUtils.KEY_USERNAME);
         mLoginEdtUsername.setText(lastUsername);
+    }
+
+    @Override
+    protected void onResume() {
+        mLoginEdtPassword.setText("");
+        super.onResume();
     }
 
     /**
@@ -110,19 +152,22 @@ public class LoginActivity extends BaseActivity {
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
-                                    startActivity(new Intent(LoginActivity.this, HomeActivity.class));
-                                    finish();
+                                    startActivity(new Intent(LoginActivity.this, MyApplication.class));
                                 }
                             });
                         }
                     }).start();
                 } else {
-                    if (loginError.equals(message) || failCode.equals(code)) {
-                        ToastUtils.showShortToast(R.string.login_error);
-                    } else if (loginStatusError.equals(message)) {
-                        ToastUtils.showShortToast(R.string.login_status_error);
-                    } else if (!successCode.equals(code)) {
-                        ToastUtils.showShortToast(R.string.login_error_unknown);
+                    if ("login.jobnumber-error".equals(message)) {
+                        ToastUtils.showShortToast("工号不存在");
+                    } else if ("login.pwd-error".equals(message)) {
+                        ToastUtils.showShortToast("密码不存在");
+                    } else if ("login.pwd.length-error".equals(message)) {
+                        ToastUtils.showShortToast("密码长度不是6-15");
+                    }else if ("login.status-error".equals(message)) {
+                        ToastUtils.showShortToast("该用户被禁");
+                    }else if ("login-error".equals(message)) {
+                        ToastUtils.showShortToast("登录失败");
                     }
                 }
                 hideProgressDialog();
@@ -130,6 +175,10 @@ public class LoginActivity extends BaseActivity {
 
             @Override
             public void requestFail(Throwable t) {
+                if (t == null){
+                    ToastUtils.showShortToast(R.string.login_net_error);
+                    return;
+                }
                 String error = t.getMessage();
                 String timeout = "timeout";
                 String noAddress = "Unable to resolve host";
@@ -141,7 +190,24 @@ public class LoginActivity extends BaseActivity {
             }
         });
     }
+    /**
+     * 显示进度框
+     */
+    public void showProgressDialog(String msg) {
+        if (mLoginDialogBuilder != null) {
+            mLoginDialog = mLoginDialogBuilder.content(msg).build();
+            mLoginDialog.show();
+        }
+    }
 
+    /**
+     * 隐藏
+     */
+    public void hideProgressDialog() {
+        if (mLoginDialog != null) {
+            mLoginDialog.dismiss();
+        }
+    }
     @OnClick(R.id.login_btn_login)
     public void onViewClicked() {
         showProgressDialog("正在登陆....");

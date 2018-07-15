@@ -7,16 +7,33 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <TextView
-            android:layout_width="200dp"
-            android:layout_height="50dp"
-            android:layout_marginTop="@dimen/storage_view_margin"
-            android:layout_gravity="center_horizontal"
-            android:gravity="center"
-            android:text="订单信息"
-            android:textSize="@dimen/storage_text_size"
-            android:textColor="@color/colorText"
-            android:background="@drawable/spinner_border"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center">
+            <TextView
+                android:layout_width="200dp"
+                android:layout_height="50dp"
+                android:gravity="center"
+                android:text="订单信息"
+                android:textSize="@dimen/storage_text_size"
+                android:textColor="@color/colorText"
+                android:layout_marginEnd="20dp"
+                android:background="@drawable/spinner_border"/>
+
+            <Button
+                android:id="@+id/out_ensure_btn_print"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:background="@drawable/btn_bg"
+                android:orientation="horizontal"
+                android:text="打印"
+                android:textColor="@color/colorWhite"
+                android:textSize="@dimen/storage_text_size"  />
+
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"

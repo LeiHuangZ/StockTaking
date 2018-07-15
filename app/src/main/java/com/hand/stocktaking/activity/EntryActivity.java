@@ -59,34 +59,7 @@ public class EntryActivity extends BaseActivity {
     private String mMattername;
     private String mMatternum;
 
-    /**
-     * 按键广播接收者 用于接受按键广播 触发扫描
-     */
-    private class MyKeyReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int keyCode = intent.getIntExtra("keyCode", 0);
-            // 为兼容早期版本机器
-            if (keyCode == 0) {
-                keyCode = intent.getIntExtra("keycode", 0);
-            }
-            boolean keyDown = intent.getBooleanExtra("keydown", false);
-            if (!keyDown) {
-                // 根据需要在对应的按键的键值中开启扫描,
-                switch (keyCode) {
-                    case KeyEvent.KEYCODE_F3:
-                    case KeyEvent.KEYCODE_F4:
-                        // uhf扫描
-                        runInventory();
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-    }
-
-    private MyKeyReceiver keyReceiver = new MyKeyReceiver();
+    private KeyReceiver keyReceiver = new KeyReceiver();
     /**
      * 盘存EPC的子线程
      */
@@ -97,7 +70,7 @@ public class EntryActivity extends BaseActivity {
                 if (isStart) {
                     LogUtils.e("RFID scan run !");
                     List<Reader.TAGINFO> list1;
-                    list1 = HomeActivity.mUhfrManager.tagInventoryByTimer((short) 50);
+                    list1 = MyApplication.mUhfrManager.tagInventoryByTimer((short) 50);
                     ArrayList<String> list = new ArrayList<>();
                     if (list1 != null && list1.size() > 0) {
                         for (Reader.TAGINFO tfs : list1) {
@@ -149,13 +122,13 @@ public class EntryActivity extends BaseActivity {
             mWeakReference = new WeakReference<>(activity);
         }
 
+        @Override
         public void handleMessage(Message msg) {
             EntryActivity activity = mWeakReference.get();
             if (msg.what == WHAT_INVENTORY) {
                 activity.mEntryRcvAdapter.setList(activity.mEntryBoxInfoList);
                 activity.mEntryTvCount.setText(String.valueOf(activity.mEntryBoxInfoList.size()));
                 SoundUtil.play(1, 0);
-                activity.mQrOrRfid = 1;
             }
         }
     }
@@ -186,16 +159,25 @@ public class EntryActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_entry);
         ButterKnife.bind(this);
         initView();
+        mQrOrRfid = 1;
+    }
+    @Override
+    public void setLayoutId() {
+        mLayoutId = R.layout.activity_entry;
+    }
+
+    @Override
+    public void setTitle() {
+        mTitle = "物料录入";
     }
 
     @Override
     public void initUtils() {
         new Thread(inventoryTask).start();
         //注册按键广播接收者
-        keyReceiver = new MyKeyReceiver();
+        keyReceiver = new KeyReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction("android.rfid.FUN_KEY");
         filter.addAction("android.intent.action.FUN_KEY");
@@ -213,7 +195,8 @@ public class EntryActivity extends BaseActivity {
                 break;
             case R.id.entry_btn_search:
 //                if (mSPUtils.getBoolean(SPUtils.KEY_IS_ENTRY)) {
-                    startActivity(new Intent(EntryActivity.this, SearchActivity.class));
+                startActivity(new Intent(EntryActivity.this, SearchActivity.class));
+                finish();
 //                } else {
 //                    ToastUtils.showShortToast("请先录入物料信息");
 //                }
@@ -222,14 +205,15 @@ public class EntryActivity extends BaseActivity {
     }
 
     @Override
-    public void onBackPressed() {
-        mSPUtils.putBoolean(SPUtils.KEY_IS_ENTRY, false);
-        super.onBackPressed();
+    protected void onResume() {
+        super.onResume();
     }
 
     @Override
     protected void onDestroy() {
         unregisterReceiver(keyReceiver);
+        isStart = false;
+        isRunning = false;
         super.onDestroy();
     }
 
@@ -242,7 +226,12 @@ public class EntryActivity extends BaseActivity {
     /**
      * 开始盘存EPC
      */
+    @Override
     public void runInventory() {
+        if (MyApplication.mUhfrManager == null){
+            ToastUtils.showShortToast("RFID异常，请退出应用重启");
+            return;
+        }
         LogUtils.e("runInventory !");
         if (keyControl) {
             keyControl = false;
@@ -250,15 +239,15 @@ public class EntryActivity extends BaseActivity {
                 // 屏蔽按钮
                 mEntryBtnEntry.setClickable(false);
                 mEntryBtnSearch.setClickable(false);
-                HomeActivity.mUhfrManager.setCancleInventoryFilter();
-                HomeActivity.mUhfrManager.setCancleFastMode();
+                MyApplication.mUhfrManager.setCancleInventoryFilter();
+                MyApplication.mUhfrManager.setCancleFastMode();
                 mEntryBtnScan.setText("停止扫描");
                 isStart = true;
             } else {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        HomeActivity.mUhfrManager.stopTagInventory();
+                        MyApplication.mUhfrManager.stopTagInventory();
                         try {
                             Thread.sleep(100);
                         } catch (Exception e) {
@@ -364,10 +353,20 @@ public class EntryActivity extends BaseActivity {
                                     String code = jsonObject.getString("code");
                                     if (code.equals("200")) {
                                         ToastUtils.showShortToast("录入成功");
-                                        // TODO: 2018/4/15 刷新界面
                                         updateUi(mUploadIdList);
                                     } else {
-                                        ToastUtils.showShortToast("录入失败，" + jsonObject.getString("message"));
+                                        String message = jsonObject.getString("message");
+                                        String error = "";
+                                        if ("store.ids-error".equals(message)) {
+                                            error = "箱子id数组不存在";
+                                        } else if ("store.userid-error".equals(message)) {
+                                            error = "用户id不存在";
+                                        } else if ("store.matternum-error".equals(message)) {
+                                            error = "物料号不存在";
+                                        } else if ("store-error".equals(message)) {
+                                            error = "录入失败";
+                                        }
+                                        ToastUtils.showShortToast("录入失败，错误信息：" + error);
                                         hideProgressDialog();
                                     }
                                 } catch (Exception e) {
@@ -379,7 +378,8 @@ public class EntryActivity extends BaseActivity {
 
                             @Override
                             public void requestFail(Throwable t) {
-
+                                ToastUtils.showShortToast("录入失败，请检查网络");
+                                hideProgressDialog();
                             }
                         });
                     }
@@ -390,13 +390,13 @@ public class EntryActivity extends BaseActivity {
         mAlertDialog.show();
     }
 
-    private void updateUi(List<String> list){
+    private void updateUi(List<String> list) {
         List<EntryBoxInfo> adapterList = mEntryRcvAdapter.getBoxInfoList();
         List<EntryBoxInfo> tempAdapterList = new ArrayList<>(adapterList);
-        for (String id: list) {
+        for (String id : list) {
             List<EntryBoxInfo> tempList = new ArrayList<>();
-            for(EntryBoxInfo adapterInfo:tempAdapterList){
-                if (adapterInfo.getId().equals(id)){
+            for (EntryBoxInfo adapterInfo : tempAdapterList) {
+                if (adapterInfo.getId().equals(id)) {
                     adapterInfo.setMatternum(mMatternum);
                     adapterInfo.setMattername(mMattername);
                     adapterInfo.setMattertype(mMattertype);
