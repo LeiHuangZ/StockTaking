@@ -45,7 +45,7 @@ public class RetrofitRequestHelper {
      * @param companyId 公司Id
      * @param listener 回掉
      */
-    public void getPreorderRequest(String companyId, final RetrofitRequestListener listener){
+        public void getPreorderRequest(String companyId, final RetrofitRequestListener listener){
         // 对 发送请求 进行封装
         Call<PreorderBean> call = sRetrofitInterface.getPreorderCall(companyId);
         // 发送异步网络请求

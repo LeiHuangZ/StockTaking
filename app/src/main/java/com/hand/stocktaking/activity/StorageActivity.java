@@ -248,6 +248,8 @@ public class StorageActivity extends BaseActivity {
 
     private void getPreorderDetail(String preorderId) {
         try {
+            mInfoList.clear();
+            mSum = 0;
             mRetrofitRequestHelper.getPreorderDetailsRequest(preorderId, new RetrofitRequestHelper.RetrofitRequestListener() {
                 @Override
                 public void requestSuccess(Response response) {
@@ -280,7 +282,7 @@ public class StorageActivity extends BaseActivity {
                                 List<ServerEpcInfo> serverEpcInfoList = new ArrayList<>();
                                 int num = 1;
                                 for (int j = 0; j < mServerEpcInfoList.size(); j++) {
-                                    ServerEpcInfo epcInfo = serverEpcInfoList.get(j);
+                                    ServerEpcInfo epcInfo = new ServerEpcInfo();
                                     if (tag.equals(mServerEpcInfoList.get(j).getEpc())) {
                                         num = mServerEpcInfoList.get(j).getNum() + 1;
                                     }
